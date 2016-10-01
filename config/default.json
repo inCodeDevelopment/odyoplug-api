@@ -10,7 +10,7 @@
 		"secret": "iuh48yq3ycg0duh03uch048h034c031c"
 	},
 	"cookieSessionSecret": "dij4f02hg-24g95gf24f2f",
-	
+	"baseUrl": "http://localhost:3000",
 	"socialAuth": {
 		"callback": "/social_auth_callback.html",
 		"callbackFailure": "/social_auth_callback_failure.html",

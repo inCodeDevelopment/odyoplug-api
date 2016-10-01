@@ -61,7 +61,6 @@ paths:
                                 id: 4
                                 username: 'Foo Bar'
                                 email: fubar@gmail.com
-                                avatar: null
 
                 '400':
                     $ref: '#/responses/InvalidInput'
@@ -108,7 +107,6 @@ paths:
                                 id: 4
                                 username: ''
                                 email: fubar@gmail.com
-                                avatar: null
                 '404':
                     $ref: '#/responses/NotFound'
     /users/signin/{provider}:
@@ -133,11 +131,6 @@ paths:
                   - twitter
                   - google
                   - facebook
-              - in: query
-                name: reidrect_url
-                required: true
-                description: Redirect url
-                format: uri
             responses:
                 default:
                     description: Redirects user to social network
