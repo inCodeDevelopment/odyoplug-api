@@ -12,6 +12,7 @@
 	
 	"socialAuth": {
 		"callback": "/social_auth_callback.html",
+		"callbackFailure": "/social_auth_callback_failure.html",
 		"google": {
 			"clientId": "",
 			"clientSecret": "_dOVXA22UvvTIPpgDtZcjyt7"

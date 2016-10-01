@@ -8,7 +8,6 @@ import { User } from 'db';
 import { sign as signToken, verify as verifyToken } from 'token';
 import { HttpError } from 'HttpError';
 import { wrap } from './utils';
-import providers from 'authProviders';
 import _ from 'lodash';
 
 const users = Router();
@@ -102,81 +101,74 @@ users.post('/signin',
 	})
 );
 
-function exposeProvider(req, res, next) {
-	req.providerName = req.params.provider;
-	req.provider = providers[req.providerName];
-	req.providerUserIdPath = `${req.providerName}Id`;
-	req.callbackUrl = config.get('baseUrl') + `/api/users/signin/${req.providerName}/callback`;
-	
-	if (!req.provider) {
-		return next(new HttpError(400, 'provider_not_found'));
+
+import passport from 'passport';
+import { OAuth2Strategy as GoogleStrategy } from 'passport-google-oauth'
+
+passport.use(new GoogleStrategy({
+		clientID: config.get('socialAuth.google.clientId'),
+		clientSecret: config.get('socialAuth.google.clientSecret'),
+		callbackURL: config.get('baseUrl') + `/api/users/signin/google/callback`,
+		passReqToCallback: true
+	},
+	function(req, accessToken, refreshToken, profile, done) {
+		User.findOne({
+			where: {
+				[profile.provider+'Id']: profile.id
+			}
+		}).then(user => {
+			if (user) {
+				return {
+					access_token: signToken({
+						user_id: user.id
+					})
+				};
+			} else {
+				return {
+					auth_code: signToken({
+						social_id: profile.id,
+						path: profile.provider+'Id'
+					})
+				};
+			}
+		}).asCallback(done);
 	}
+));
 
-	next();
-}
-
-users.get('/signin/:provider',
-	exposeProvider,
-	wrap(async function(req, res) {
-		const authUrl = req.provider.authUrl({
-			callbackUrl: req.callbackUrl
-		});
-
-		res.redirect(authUrl);
+users.get('/signin/google',
+	passport.authenticate('google', {
+		scope: 'profile',
+		session: false
 	})
 );
 
-users.get('/signin/:provider/callback',
-	exposeProvider,
-	wrap(async function(req, res) {
-		const redirectUrl = config.get('socialAuth.callback');
-
-		if (req.query & req.query.error) {
-			res.redirect(redirectUrl + '?' + qs.stringify({
-				status: 'error',
-				error: req.query.error
-			}));
-		}
-		
-		const providerAccessToken = await req.provider.getAccessToken(
-			req.query.code,
-			req.callbackUrl
-		);
-
-		const socialId = await req.provider.getSocialId(providerAccessToken);
-
-		const user = await User.findOne({
-			where: {
-				[req.providerUserIdPath]: socialId
-			}
-		});
-
-		if (user) {
-			const access_token = signToken({
-				user_id: user.id
-			});
-
-			res.redirect(redirectUrl + '?' + qs.stringify({
+users.get('/signin/google/callback',
+	passport.authenticate('google', {
+		failureRedirect: config.get('socialAuth.callbackFailure'),
+		session: false
+	}),
+	function(req, res) {
+		if (req.user.access_token) {
+			res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
 				status: 'authroized',
-				access_token: access_token
+				access_token: req.user.access_token
 			}));
-		} else {
-			const auth_code = signToken({
-				social_id: socialId,
-				path: req.providerUserIdPath
-			});
-
-			res.redirect(redirectUrl + '?' + qs.stringify({
-				status: 'not_authorized',
-				auth_code: auth_code
-			}));
+			return;
 		}
-	})
+
+		if (req.user.auth_code) {
+			res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
+				status: 'not_authorized',
+				auth_code: req.user.auth_code
+			}));
+			return;
+		}
+	}
 );
 
 users.post('/link',
 	wrap(async function(req, res) {
-		const authInfo = verifyToken(req.query.auth_code);
+		const authInfo = verifyToken(req.body.auth_code);
 
 		req.user.set({
 			[authInfo.path]: authInfo.social_id
