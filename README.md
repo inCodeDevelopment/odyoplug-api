@@ -1,34 +1,23 @@
-# Документация
-Документация по api написана по стандарту open api и лежит в файле `doc.yml`.
-
-Также можно запустить `python -m SimpleHTTPServer` или аналогичную команду в вашей системе и открыть файл `doc.html` для просмотра документации с использование ReDoc
-
-# Запуск
-
+# API Docs
 ```
-git clone git@github.com:artemsmirnov/incode-test.git
-cd incode-test
+python -m SimpleHTTPServer
+```
+Open `http://localhost:8000/doc.html` in browser
+
+# Install & Run
+```
 npm i
-```
-
-Далее для запуска
-```
 npm start
 ```
 
-Или для запуска демоном с помощью forever
-```
-npm start:forever
-```
+# Configuration
+All configuration options are presented in `config/custom-environment-variables.json`
 
-Для настройки можно создать файл hostName|local.json в папке config либо задать настройки через переменные окружения(смотреть config/custom-environment-variables.json).
+# Bootstrap DB
+Postgres + `citext` extension is used
+Run `npm run db:bootstrap` to create up to date schemas in your database
 
-# Разворачивание БД
-Как база данных используется postgresql, необходима база с расширением `citext`
-
-Для разворачивания чистой структуры можно применть скрипт `npm db:bootstrap`
-
-# Тесты
+# Tests
 ```
 npm test
 ```

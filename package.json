@@ -54,9 +54,6 @@
     "test": "NODE_ENV=test mocha --opts mocha.opts src/**/*_test.js",
     "build": "babel src -d dist",
     "start": "node -r babel-register src/server.js",
-    "start:forever": "forever start server.js",
-    "docker:build": "docker build -t artyom/incode-test .",
-    "docker:run": "docker run -e DB_HOST=database -e DB_PASSWORD=postgres --add-host database:172.17.0.1 --restart on-failure --name incode-test -p 3400:3400 -d artyom/incode-test",
     "db:bootstrap": "node -r babel-register scripts/db/bootstrap.js"
   },
   "author": "",
