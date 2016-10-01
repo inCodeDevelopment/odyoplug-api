@@ -5,3 +5,5 @@ config/**/*
 !config/custom-environment-variables.json
 !config/default.json
 !config/test.json
+
+npm-debug.log
