@@ -1,0 +1,5 @@
+--require should
+--require should-sinon
+--compilers js:babel-register
+--timeout 10000
+--recursive

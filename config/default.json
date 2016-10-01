@@ -1,0 +1,28 @@
+{
+	"db": {
+		"name": "odyoplug",
+		"host": "localhost",
+		"username": "postgres",
+		"password": ""
+	},
+	"port": 3000,
+	"jwt": {
+		"secret": "iuh48yq3ycg0duh03uch048h034c031c"
+	},
+	
+	"socialAuth": {
+		"callback": "/social_auth_callback.html",
+		"google": {
+			"clientId": "",
+			"clientSecret": "_dOVXA22UvvTIPpgDtZcjyt7"
+		},
+		"twitter": {
+			"clientId": "",
+			"clientSecret": ""
+		},
+		"facebook": {
+			"clientId": "",
+			"clientSecret": ""
+		}
+	}
+}

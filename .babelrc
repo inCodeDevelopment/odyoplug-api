@@ -1,0 +1,17 @@
+{
+	"presets": ["es2015-node"],
+	"plugins": [
+		["transform-async-to-module-method", {
+			"module": "bluebird",
+			"method": "coroutine"
+		}],
+		"transform-es2015-destructuring",
+		"transform-object-rest-spread",
+		"transform-function-bind",
+		"transform-export-extensions",
+		"transform-promise-to-bluebird",
+		["module-resolver", {
+			"root": ["./src"],
+		}]
+	]
+}

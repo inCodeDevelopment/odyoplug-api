@@ -1,0 +1,277 @@
+swagger: '2.0'
+schemes:
+    - https
+host: localhost
+basePath: /api
+
+consumes: [application/json]
+produces: [application/json]
+
+info:
+    title: 'odyoplug api'
+    version: 1.0.0
+
+tags:
+  - name: user
+    description: User operations
+
+securityDefinitions:
+    access_token:
+        type: apiKey
+        name: Authorization
+        in: header
+
+paths:
+    /users/signup:
+        post:
+            tags: [user]
+            summary: Sign up
+            operationId: userSignUp
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required: [email, password, username]
+                    properties:
+                        email:
+                            type: string
+                        password:
+                            type: string
+                        username:
+                            type: string
+                    example:
+                        email: fubar@gmail.com
+                        password: catKeyboard
+                        username: Foo Bar
+            responses:
+                '201':
+                    description: 'Created'
+                    schema:
+                        type: object
+                        properties:
+                            access_token:
+                                type: string
+                            user:
+                                $ref: '#/definitions/User'
+                    examples:
+                        application/json:
+                            access_token: 9ud2h8u4h082hc2u8hd082h48248hc084h
+                            user:
+                                id: 4
+                                username: 'Foo Bar'
+                                email: fubar@gmail.com
+                                avatar: null
+
+                '400':
+                    $ref: '#/responses/InvalidInput'
+                '422':
+                    description: 'Email is taken'
+                    schema:
+                        $ref: '#/definitions/GenericError'
+                    examples:
+                        application/json:
+                            error: email_is_taken
+    /users/signin:
+        post:
+            tags: [user]
+            summary: Sign in
+            operationId: userSignIn
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required: [email, password]
+                    properties:
+                        email:
+                            type: string
+                        password:
+                            type: string                
+                    example:
+                        email: fubar@gmail.com
+                        password: catKeyboard
+            responses:
+                '200':
+                    description: 'Signed in'
+                    schema:
+                        type: object
+                        properties:
+                            access_token:
+                                type: string
+                            user:
+                                $ref: '#/definitions/User'
+                    examples:
+                        application/json:
+                            access_token: 20h0y29f94fy9f2394fy23gf49423
+                            user:
+                                id: 4
+                                username: ''
+                                email: fubar@gmail.com
+                                avatar: null
+                '404':
+                    $ref: '#/responses/NotFound'
+    /users/signin/{provider}:
+        get:
+            tags: [user]
+            summary: Sign in via social network
+            description: |
+                Sign in user via social network and redirects user to query.redirect_url.
+
+                If authorization failed it redirects with error in query params.
+                
+                If local account linked with this social account exists redirects with access_token in query
+                
+                If no local account linked with this social account found redirects with auth_code in query, that can be use to link local account with social account. 
+            operationId: userSignInSocial
+            parameters:
+              - in: path
+                name: provider
+                required: true
+                description: Provider name
+                enum:
+                  - twitter
+                  - google
+                  - facebook
+              - in: query
+                name: reidrect_url
+                required: true
+                description: Redirect url
+                format: uri
+            responses:
+                default:
+                    description: Redirects user to social network
+    /users/link:
+        post:
+            tags: [user]
+            summary: Link social account
+            description: |
+                Links current user with social account using auth_code obtained with `/users/signin/{provider}` route
+            operationId: userLink
+            security:
+              - access_token: []
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required: [auth_code]
+                    properties:
+                        auth_code:
+                            type: string           
+                    example:
+                        auth_code: da2dq43fq4ff0qf4309uqh4f3
+            responses:
+                '200':
+                    description: Linked
+    /users/me:
+        get:
+            tags: [user]
+            summary: Get current user
+            operationId: userGetMe
+            security:
+              - access_token: []
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            user:
+                                $ref: '#/definitions/User'
+                    examples:
+                        application/json:
+                            user:
+                                id: 4
+                                name: ''
+                                email: fubar@gmail.com
+        post:
+            tags: [user]
+            summary: Update current user
+            operationId: usersUpdateMe
+            security:
+              - access_token: []
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        username:
+                            type: string
+                        password:
+                            type: string
+                    example:
+                        email: fubar@gmail.com
+                        password: catKeyboard
+              - in: header
+                name: Password
+                type: string
+                description: Current password confirmation
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            user:
+                                $ref: '#/definitions/User'
+                    examples:
+                        application/json:
+                            user:
+                                id: 4
+                                username: 'Foo Bar'
+                                email: fubar@gmail.com
+
+responses:
+    NotFound:
+        description: Entity not found
+        schema:
+            $ref: '#/definitions/GenericError'
+        examples:
+            application/json:
+                error: not_found
+    InvalidInput:
+        description: Invalid input for operation
+        schema:
+            $ref: '#/definitions/InvalidInputError'
+        examples:
+            application/json:
+                error: invalid_input
+                errors:
+                  - dataPath: '.username'
+                    keyword: 'pattern'
+                    message: 'should match pattern "^\\w{4,255}$"'
+                    params:
+                        pattern: '^\\w{4,255}$'
+
+definitions:
+    User:
+        type: object
+        required:
+            - id
+            - username
+            - email
+        properties:
+            id:
+                type: string
+            username:
+                type: string
+                minLength: 1
+            email:
+                type: string
+                format: email       
+    GenericError:
+        type: object
+        properties:
+            error:
+                type: string
+    InvalidInputError:
+        type: object
+        properties:
+            error:
+                type: string
+            errors:
+                type: array
+                items:
+                    type: object
