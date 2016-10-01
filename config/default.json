@@ -16,11 +16,15 @@
 		"callbackFailure": "/social_auth_callback_failure.html",
 		"google": {
 			"clientId": "",
-			"clientSecret": "_dOVXA22UvvTIPpgDtZcjyt7"
+			"clientSecret": ""
 		},
 		"facebook": {
 			"clientId": "",
 			"clientSecret": ""
+		},
+		"twitter": {
+			"consumerKey": "",
+			"consumerSecret": ""
 		}
 	}
 }

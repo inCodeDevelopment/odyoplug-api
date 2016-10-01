@@ -8,5 +8,23 @@
 	"port": "PORT",
 	"jwt": {
 		"secret": "JWT_SECREGT"
+	},
+	"cookieSessionSecret": "COOKIE_SESSION_SECRET",
+	
+	"socialAuth": {
+		"callback": "SOCIAL_AUTH_CALLBACK",
+		"callbackFailure": "SOCIAL_AUTH_CALLBACK_FAILURE",
+		"google": {
+			"clientId": "SOCIAL_AUTH_GOOGLE_CLIENT_ID",
+			"clientSecret": "SOCIAL_AUTH_GOOGLE_CLIENT_SECRET"
+		},
+		"facebook": {
+			"clientId": "SOCIAL_AUTH_FACEBOOK_CLIENT_ID",
+			"clientSecret": "SOCIAL_AUTH_FACEBOOK_CLIENT_SECRET"
+		},
+		"twitter": {
+			"consumerKey": "SOCIAL_AUTH_TWITTER_CONSUMER_KEY",
+			"consumerSecret": "SOCIAL_AUTH_FACEBOOK_CONSUMER_SECRET"
+		}
 	}
 }
