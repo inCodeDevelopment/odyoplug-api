@@ -3,6 +3,9 @@ import bodyParser from 'body-parser';
 import routes from 'routes';
 import { authorization, errorHandler } from 'middlewares';
 import { ready as dbReady } from 'db';
+import initPassportStrategies from 'passportStrategies';
+
+initPassportStrategies();
 
 const app = express();
 

@@ -9,6 +9,7 @@
 	"jwt": {
 		"secret": "iuh48yq3ycg0duh03uch048h034c031c"
 	},
+	"cookieSessionSecret": "dij4f02hg-24g95gf24f2f",
 	
 	"socialAuth": {
 		"callback": "/social_auth_callback.html",
@@ -16,10 +17,6 @@
 		"google": {
 			"clientId": "",
 			"clientSecret": "_dOVXA22UvvTIPpgDtZcjyt7"
-		},
-		"twitter": {
-			"clientId": "",
-			"clientSecret": ""
 		},
 		"facebook": {
 			"clientId": "",

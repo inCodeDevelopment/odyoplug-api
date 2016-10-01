@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { authorizedOnly, validate } from 'middlewares';
+import cookieSession from 'cookie-session';
 import config from 'config';
+import passport from 'passport';
 import qs from 'querystring';
 
 import { User } from 'db';
@@ -101,75 +103,78 @@ users.post('/signin',
 	})
 );
 
-
-import passport from 'passport';
-import { OAuth2Strategy as GoogleStrategy } from 'passport-google-oauth'
-
-passport.use(new GoogleStrategy({
-		clientID: config.get('socialAuth.google.clientId'),
-		clientSecret: config.get('socialAuth.google.clientSecret'),
-		callbackURL: config.get('baseUrl') + `/api/users/signin/google/callback`,
-		passReqToCallback: true
-	},
-	function(req, accessToken, refreshToken, profile, done) {
-		User.findOne({
-			where: {
-				[profile.provider+'Id']: profile.id
-			}
-		}).then(user => {
-			if (user) {
-				return {
-					access_token: signToken({
-						user_id: user.id
-					})
-				};
-			} else {
-				return {
-					auth_code: signToken({
-						social_id: profile.id,
-						path: profile.provider+'Id'
-					})
-				};
-			}
-		}).asCallback(done);
+function redirectUser(req, res) {
+	if (req.user.access_token) {
+		res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
+			status: 'authroized',
+			access_token: req.user.access_token
+		}));
+		return;
 	}
-));
 
+	if (req.user.auth_code) {
+		res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
+			status: 'not_authorized',
+			auth_code: req.user.auth_code
+		}));
+		return;
+	}
+}
+
+// Facebook
+users.get('/signin/facebook',
+	passport.authenticate('facebook', {
+		session: false
+	})
+);
+users.get('/signin/facebook/callback',
+	passport.authenticate('facebook', {
+		failureRedirect: config.get('socialAuth.callbackFailure'),
+		session: false
+	}),
+	redirectUser
+);
+
+// Twitter
+users.use('/signin/twitter',
+	cookieSession({
+		name: 'session',
+		secret: config.get('cookieSessionSecret')
+	})
+);
+users.get('/signin/twitter',
+	passport.authenticate('twitter', {
+		session: false
+	})
+);
+users.get('/signin/twitter/callback',
+	passport.authenticate('twitter', {
+		failureRedirect: config.get('socialAuth.callbackFailure'),
+		session: false
+	}),
+	redirectUser
+);
+
+// Google
 users.get('/signin/google',
 	passport.authenticate('google', {
 		scope: 'profile',
 		session: false
 	})
 );
-
 users.get('/signin/google/callback',
 	passport.authenticate('google', {
 		failureRedirect: config.get('socialAuth.callbackFailure'),
 		session: false
 	}),
-	function(req, res) {
-		if (req.user.access_token) {
-			res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
-				status: 'authroized',
-				access_token: req.user.access_token
-			}));
-			return;
-		}
-
-		if (req.user.auth_code) {
-			res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
-				status: 'not_authorized',
-				auth_code: req.user.auth_code
-			}));
-			return;
-		}
-	}
+	redirectUser
 );
 
 users.post('/link',
 	wrap(async function(req, res) {
 		const authInfo = verifyToken(req.body.auth_code);
 
+		// @TODO check if req.user[authInfo.path] exists
 		req.user.set({
 			[authInfo.path]: authInfo.social_id
 		});
