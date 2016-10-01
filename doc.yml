@@ -125,6 +125,7 @@ paths:
             parameters:
               - in: path
                 name: provider
+                type: string
                 required: true
                 description: Provider name
                 enum:
