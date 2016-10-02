@@ -197,11 +197,23 @@ users.post('/link',
 			throw new HttpError(422, `${authInfo.path}_is_already_assigned`);	
 		}
 
-		await req.user.update({
-			[authInfo.path]: authInfo.social_id
-		});
 
-		// @TODO check unique constraint conflict
+		try {
+			await req.user.update({
+				[authInfo.path]: authInfo.social_id
+			});
+		} catch (error) {
+			if (
+				error.name === 'SequelizeUniqueConstraintError' &&
+				_.some(error.errors, _.matches({
+					type: 'unique violation'
+				}))
+			) {
+				throw new HttpError(400, '${authInfo}_is_already_assigned_to_another_account');
+			} else {
+				throw error;
+			}
+		}
 
 		res.status(200).json({
 			user: req.user
