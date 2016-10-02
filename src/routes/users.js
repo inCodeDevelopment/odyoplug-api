@@ -17,19 +17,24 @@ const users = Router();
 users.post('/signup',
 	validate({
 		body: {
-			required: ['username', 'email', 'password'],
-			properties: {
-				username: {
-					type: 'string'
+			username: {
+				notEmpty: true,
+				errorMessage: 'Invalid username'
+			},
+			email: {
+				notEmpty: true,
+				matches: {
+					options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
 				},
-				email: {
-					type: 'string',
-					pattern: '^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$'
+				errorMessage: 'Invalid email'
+			},
+			password: {
+				notEmpty: true,
+				isLength: {
+					options: [{min: 6}],
+					errorMessage: 'Password must be at least 6 characters long'
 				},
-				password: {
-					type: 'string',
-					minLength: 6
-				}
+				errorMessage: 'Invalid password'
 			}
 		}
 	}),
@@ -58,7 +63,15 @@ users.post('/signup',
 					path: 'email'
 				}))
 			) {
-				throw new HttpError(422, 'email_is_taken')
+				throw new HttpError(400, 'invalid_input', {
+					errors: {
+						email: {
+							param: 'email',
+							msg: 'Email is already in use',
+							value: req.body.email
+						}
+					}
+				})
 			} else {
 				throw error;
 			}
@@ -69,16 +82,16 @@ users.post('/signup',
 users.post('/signin',
 	validate({
 		body: {
-			required: ['email', 'password'],
-			properties: {
-				email: {
-					type: 'string',
-					pattern: '^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$'
+			email: {
+				notEmpty: true,
+				matches: {
+					options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
 				},
-				password: {
-					type: 'string',
-					minLength: 6
-				}
+				errorMessage: 'Invalid email'
+			},
+			password: {
+				notEmpty: true,
+				errorMessage: 'Invalid password'
 			}
 		}
 	}),
@@ -98,7 +111,13 @@ users.post('/signin',
 				access_token, user
 			});
 		} else {
-			throw new HttpError(400, 'user_not_found');
+			throw new HttpError(400, 'invalid_input', {
+				errors: {
+					_form: {
+						msg: 'User not found'
+					}
+				}
+			});
 		}
 	})
 );
@@ -200,14 +219,8 @@ users.post('/me',
 	authorizedOnly,
 	validate({
 		body: {
-			properties: {
-				username: {
-					type: 'string'
-				},
-				password: {
-					type: 'string',
-					minLength: 6
-				}
+			password: {
+				errorMessage: 'Invalid password'
 			}
 		}
 	}),

@@ -44,9 +44,16 @@ describe('api /users', function () {
 					username: 'test'
 				});
 
-			createCollisionUserResponse.statusCode.should.be.equal(422);
+			createCollisionUserResponse.statusCode.should.be.equal(400);
 			createCollisionUserResponse.body.should.be.eql({
-				error: 'email_is_taken'
+				error: 'invalid_input',
+				errors: {
+					email: {
+						msg: 'Email is already in use',
+						param: 'email',
+						value: 'Test@gmail.com'
+					}
+				}
 			});
 		});
 	});
@@ -108,7 +115,12 @@ describe('api /users', function () {
 
 			signInResponse.statusCode.should.be.equal(400);
 			signInResponse.body.should.be.eql({
-				error: 'user_not_found'
+				error: 'invalid_input',
+				errors: {
+					_form: {
+						msg: 'User not found'
+					}
+				}
 			});
 		});
 
@@ -123,7 +135,12 @@ describe('api /users', function () {
 
 			signInResponse.statusCode.should.be.equal(400);
 			signInResponse.body.should.be.eql({
-				error: 'user_not_found'
+				error: 'invalid_input',
+				errors: {
+					_form: {
+						msg: 'User not found'
+					}
+				}
 			});
 		});
 	});

@@ -1,19 +1,18 @@
 import { HttpError } from 'HttpError';
-import Ajv from 'ajv';
 
-function validate(schema) {
-	const ajv = new Ajv({allErrors: true});
-	const validator = ajv.compile(schema.body);
-
+function validate(schemas) {
 	return function(req, res, next) {
 		try {
-			const valid = validator(req.body);
-			const errors = validator.errors;
-			
-			if (valid) {
-				next();
+			if (schemas.body) {
+				req.checkBody(schemas.body);
+			}
+
+			const errors = req.validationErrors(true);
+
+			if (errors) {
+				next(new HttpError(400, 'invalid_input', {errors}));
 			} else {
-				next(new HttpError(400, 'invalid_input', {errors}))
+				next();
 			}
 		} catch (err) {
 			next(err);
