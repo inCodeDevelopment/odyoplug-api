@@ -25,9 +25,21 @@ export const User = db.define('user', {
 	},
 	username: Sequelize.STRING,
 	hash: Sequelize.STRING,
-	googleId: Sequelize.STRING,
-	facebookId: Sequelize.STRING,
-	twitterId: Sequelize.STRING
+	googleId: {
+		type: Sequelize.STRING,
+		unique: true,
+		allowNull: true
+	},
+	facebookId: {
+		type: Sequelize.STRING,
+		unique: true,
+		allowNull: true
+	}
+	twitterId: {
+		type: Sequelize.STRING,
+		unique: true,
+		allowNull: true
+	}
 }, {
 	timestamps: false,
 	instanceMethods: {

@@ -193,12 +193,15 @@ users.post('/link',
 	wrap(async function(req, res) {
 		const authInfo = verifyToken(req.body.auth_code);
 
-		// @TODO check if req.user[authInfo.path] exists
-		req.user.set({
+		if (req.user[authInfo.path]) {
+			throw new HttpError(422, `${authInfo.path}_is_already_assigned`);	
+		}
+
+		await req.user.update({
 			[authInfo.path]: authInfo.social_id
 		});
 
-		await req.user.save();
+		// @TODO check unique constraint conflict
 
 		res.status(200).json({
 			user: req.user
