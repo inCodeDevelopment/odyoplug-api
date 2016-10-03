@@ -34,7 +34,7 @@ export const User = db.define('user', {
 		type: Sequelize.STRING,
 		unique: true,
 		allowNull: true
-	}
+	},
 	twitterId: {
 		type: Sequelize.STRING,
 		unique: true,
