@@ -20,6 +20,9 @@ users.post('/signup',
 		body: {
 			username: {
 				notEmpty: true,
+				matches: {
+					options: ['^[a-zA-Z0-9._]+$']
+				},
 				errorMessage: 'Invalid username'
 			},
 			email: {
@@ -57,6 +60,7 @@ users.post('/signup',
 				access_token, user
 			});
 		} catch (error) {
+			// @TODO refactor
 			if (
 				error.name === 'SequelizeUniqueConstraintError' &&
 				_.some(error.errors, _.matches({
@@ -70,6 +74,22 @@ users.post('/signup',
 							param: 'email',
 							msg: 'Email is already in use',
 							value: req.body.email
+						}
+					}
+				});
+			} else if (
+				error.name === 'SequelizeUniqueConstraintError' &&
+				_.some(error.errors, _.matches({
+					type: 'unique violation',
+					path: 'username'
+				}))
+			) {
+				throw new HttpError(400, 'invalid_input', {
+					errors: {
+						username: {
+							param: 'username',
+							msg: 'Username is taken',
+							value: req.body.username
 						}
 					}
 				})

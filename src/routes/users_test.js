@@ -27,7 +27,35 @@ describe('api /users', function () {
 			});
 		});
 
-		it('should return error on username conflict');
+		it('should return error on username conflict', async function () {
+			const agent = supertest(app);
+
+			await agent.post('/api/users/signup')
+				.send({
+					email: 'test@gmail.com',
+					password: '12345678',
+					username: 'test'
+				});
+
+			const createCollisionUserResponse = await agent.post('/api/users/signup')
+				.send({
+					email: 'tst@gmail.com',
+					password: 'gw45g4v5v05',
+					username: 'Test'
+				});
+
+			createCollisionUserResponse.statusCode.should.be.equal(400);
+			createCollisionUserResponse.body.should.be.eql({
+				error: 'invalid_input',
+				errors: {
+					username: {
+						msg: 'Username is taken',
+						param: 'username',
+						value: 'Test'
+					}
+				}
+			});
+		});
 
 		it('should return error on email conflict', async function () {
 			const agent = supertest(app);

@@ -23,7 +23,11 @@ export const User = db.define('user', {
 		unique: true,
 		allowNull: false
 	},
-	username: Sequelize.STRING,
+	username: {
+		type: 'citext',
+		unique: true,
+		allowNull: false
+	},
 	hash: Sequelize.STRING,
 	googleId: {
 		type: Sequelize.STRING,
