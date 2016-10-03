@@ -83,12 +83,9 @@ users.post('/signup',
 users.post('/signin',
 	validate({
 		body: {
-			email: {
+			login: {
 				notEmpty: true,
-				matches: {
-					options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
-				},
-				errorMessage: 'Invalid email'
+				errorMessage: 'Invalid login'
 			},
 			password: {
 				notEmpty: true,
@@ -97,10 +94,12 @@ users.post('/signin',
 		}
 	}),
 	wrap(async function(req, res) {
+		const query = req.body.login.indexOf('@') === -1
+			? { username: req.body.login }
+			: { email: req.body.login };
+
 		const user = await User.findOne({
-			where: {
-				email: req.body.email
-			}
+			where: query
 		});
 
 		if (user && await user.verifyPassword(req.body.password)) {

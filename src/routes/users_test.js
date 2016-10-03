@@ -27,6 +27,8 @@ describe('api /users', function () {
 			});
 		});
 
+		it('should return error on username conflict');
+
 		it('should return error on email conflict', async function () {
 			const agent = supertest(app);
 
@@ -75,7 +77,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
+					login: 'test@gmail.com',
 					password: '123123123'
 				});
 
@@ -92,7 +94,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'TeST@gmail.COM',
+					login: 'TeST@gmail.COM',
 					password: '123123123'
 				});
 
@@ -109,7 +111,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
+					login: 'test@gmail.com',
 					password: '000000'
 				});
 
@@ -129,7 +131,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'fubar@test.com',
+					login: 'fubar@test.com',
 					password: '000000'
 				});
 
@@ -162,7 +164,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
+					login: 'test@gmail.com',
 					password: '123123123'
 				});
 
@@ -230,7 +232,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
+					login: 'test@gmail.com',
 					password: '1366666631'
 				});
 
@@ -249,7 +251,7 @@ describe('api /users', function () {
 
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
+					login: 'test@gmail.com',
 					password: '123123'
 				});
 			

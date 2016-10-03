@@ -81,14 +81,15 @@ paths:
                 name: body
                 schema:
                     type: object
-                    required: [email, password]
+                    required: [login, password]
                     properties:
-                        email:
+                        login:
                             type: string
+                            description: Username or email
                         password:
                             type: string                
                     example:
-                        email: fubar@gmail.com
+                        login: fubar@gmail.com
                         password: catKeyboard
             responses:
                 '200':
