@@ -11,6 +11,7 @@ import { sign as signToken, verify as verifyToken } from 'token';
 import { HttpError } from 'HttpError';
 import { wrap } from './utils';
 import _ from 'lodash';
+import url from 'url';
 
 const users = Router();
 
@@ -122,9 +123,20 @@ users.post('/signin',
 	})
 );
 
+// @TODO refactor
 function redirectUser(req, res) {
+	let callback;
+	if (config.get('socialAuth.resolveCallbackFromReferer')) {
+		callback = url.resolve(
+			req.session.referer || '',
+			config.get('socialAuth.callback')
+		);
+	} else {
+		callback = config.get('socialAuth.callback');
+	}
+	
 	if (req.user.access_token) {
-		res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
+		res.redirect(callback + '?' + qs.stringify({
 			status: 'authroized',
 			access_token: req.user.access_token
 		}));
@@ -132,7 +144,7 @@ function redirectUser(req, res) {
 	}
 
 	if (req.user.auth_code) {
-		res.redirect(config.get('socialAuth.callback') + '?' + qs.stringify({
+		res.redirect(callback + '?' + qs.stringify({
 			status: 'not_authorized',
 			auth_code: req.user.auth_code
 		}));
@@ -140,52 +152,71 @@ function redirectUser(req, res) {
 	}
 }
 
-// Facebook
-users.get('/signin/facebook',
-	passport.authenticate('facebook', {
-		session: false
-	})
-);
-users.get('/signin/facebook/callback',
-	passport.authenticate('facebook', {
-		failureRedirect: config.get('socialAuth.callbackFailure'),
-		session: false
-	}),
-	redirectUser
-);
-
-// Twitter
-users.use('/signin/twitter',
+users.use('/signin/:provider',
 	cookieSession({
 		name: 'session',
 		secret: config.get('cookieSessionSecret')
 	})
 );
+
+function storeReferer(req, res, next) {
+	req.session.referer = req.get('Referrer');
+}
+
+function passportCallbackHandler(provider) {
+	return (req, res, next) => {
+		let failureRedirect;
+
+		if (config.get('socialAuth.resolveCallbackFromReferer')) {
+			failureRedirect = url.resolve(
+				req.session.referer || '',
+				config.get('socialAuth.callbackFailure')
+			);
+		} else {
+			failureRedirect = config.get('socialAuth.callbackFailure');
+		}
+
+		passport.authenticate('provider', {
+			failureRedirect: failureRedirect,
+			session: false
+		})(req, res, next);
+	}
+}
+
+// Facebook
+users.get('/signin/facebook',
+	storeReferer,
+	passport.authenticate('facebook', {
+		session: false
+	})
+);
+users.get('/signin/facebook/callback',
+	passportCallbackHandler('facebook'),
+	redirectUser
+);
+
+// Twitter
 users.get('/signin/twitter',
+	storeReferer,
 	passport.authenticate('twitter', {
 		session: false
 	})
 );
 users.get('/signin/twitter/callback',
-	passport.authenticate('twitter', {
-		failureRedirect: config.get('socialAuth.callbackFailure'),
-		session: false
-	}),
+	passportCallbackHandler('facebook'),
 	redirectUser
 );
 
 // Google
 users.get('/signin/google',
+	storeReferer,
 	passport.authenticate('google', {
 		scope: 'profile',
 		session: false
 	})
 );
 users.get('/signin/google/callback',
-	passport.authenticate('google', {
-		failureRedirect: config.get('socialAuth.callbackFailure'),
-		session: false
-	}),
+	passportCallbackHandler('facebook'),
 	redirectUser
 );
 
