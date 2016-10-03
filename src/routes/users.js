@@ -123,9 +123,40 @@ users.post('/signin',
 	})
 );
 
-// @TODO refactor
+users.use('/signin/:provider',
+	cookieSession({
+		name: 'session',
+		secret: config.get('cookieSessionSecret')
+	})
+);
+
+function storeReferer(req, res, next) {
+	req.session.referer = req.get('Referrer');
+}
+
+function passportCallbackHandler(provider) {
+	return (req, res, next) => {
+		let failureCallback;
+
+		if (config.get('socialAuth.resolveCallbackFromReferer')) {
+			failureCallback = url.resolve(
+				req.session.referer || '',
+				config.get('socialAuth.callbackFailure')
+			);
+		} else {
+			failureCallback = config.get('socialAuth.callbackFailure');
+		}
+
+		passport.authenticate('provider', {
+			failureRedirect: failureCallback,
+			session: false
+		})(req, res, next);
+	}
+}
+
 function redirectUser(req, res) {
 	let callback;
+
 	if (config.get('socialAuth.resolveCallbackFromReferer')) {
 		callback = url.resolve(
 			req.session.referer || '',
@@ -149,37 +180,6 @@ function redirectUser(req, res) {
 			auth_code: req.user.auth_code
 		}));
 		return;
-	}
-}
-
-users.use('/signin/:provider',
-	cookieSession({
-		name: 'session',
-		secret: config.get('cookieSessionSecret')
-	})
-);
-
-function storeReferer(req, res, next) {
-	req.session.referer = req.get('Referrer');
-}
-
-function passportCallbackHandler(provider) {
-	return (req, res, next) => {
-		let failureRedirect;
-
-		if (config.get('socialAuth.resolveCallbackFromReferer')) {
-			failureRedirect = url.resolve(
-				req.session.referer || '',
-				config.get('socialAuth.callbackFailure')
-			);
-		} else {
-			failureRedirect = config.get('socialAuth.callbackFailure');
-		}
-
-		passport.authenticate('provider', {
-			failureRedirect: failureRedirect,
-			session: false
-		})(req, res, next);
 	}
 }
 
