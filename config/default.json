@@ -12,6 +12,7 @@
 	"cookieSessionSecret": "dij4f02hg-24g95gf24f2f",
 	"baseUrl": "http://localhost:3000",
 	"socialAuth": {
+		"resolveCallbackFromReferer": false,
 		"callback": "/social_auth_callback.html",
 		"callbackFailure": "/social_auth_callback_failure.html",
 		"google": {

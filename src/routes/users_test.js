@@ -227,12 +227,12 @@ describe('api /users', function () {
 			const updateMeResponse = await agent.post('/api/users/me')
 				.set('Authorization', access_token)
 				.send({
-					username: 'Foo Bar'
+					username: 'FooBar'
 				});
 
 			updateMeResponse.statusCode.should.be.equal(200);
 			updateMeResponse.body.user.should.containEql({
-				username: 'Foo Bar'
+				username: 'FooBar'
 			});
 		});
 

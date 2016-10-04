@@ -13,6 +13,7 @@
 	"cookieSessionSecret": "COOKIE_SESSION_SECRET",
 	
 	"socialAuth": {
+		"resolveCallbackFromReferer": "SOCIAL_AUTH_RESOLVE_CALLBACK_FROM_REFERER",
 		"callback": "SOCIAL_AUTH_CALLBACK",
 		"callbackFailure": "SOCIAL_AUTH_CALLBACK_FAILURE",
 		"google": {

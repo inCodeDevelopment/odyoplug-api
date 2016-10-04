@@ -23,6 +23,7 @@
     "express": "^4.14.0",
     "express-validator": "^2.20.10",
     "jsonwebtoken": "^7.1.9",
+    "latinize": "^0.3.0",
     "lodash": "^4.14.2",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",

@@ -21,7 +21,7 @@ export const User = db.define('user', {
 	email: {
 		type: 'citext',
 		unique: true,
-		allowNull: false
+		allowNull: true
 	},
 	username: {
 		type: 'citext',

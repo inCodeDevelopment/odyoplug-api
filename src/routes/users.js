@@ -13,90 +13,110 @@ import { wrap } from './utils';
 import _ from 'lodash';
 import url from 'url';
 
+const schemas = {
+	username: {
+		matches: {
+			options: ['^[a-zA-Z0-9._]+$'],
+			errorMessage: 'Username must consist of letters numbers dots and underscores only'
+		},
+		errorMessage: 'Invalid username'
+	},
+	password: {
+		isLength: {
+			options: [{min: 6}],
+			errorMessage: 'Password must be at least 6 characters long'
+		},
+		errorMessage: 'Invalid password'
+	},
+	email: {
+		matches: {
+			options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
+		},
+		errorMessage: 'Invalid email'
+	}
+};
+
+async function catchUniqueConstraintError(promise) {
+	try {
+		return (await promise);
+	} catch (error) {
+		if (
+			error.name === 'SequelizeUniqueConstraintError' &&
+			_.some(error.errors, _.matches({
+				type: 'unique violation',
+				path: 'email'
+			}))
+		) {
+			throw new HttpError(400, 'invalid_input', {
+				errors: {
+					email: {
+						param: 'email',
+						msg: 'Email is already in use',
+						value: _.find(error.errors, {path: 'email'}).value
+					}
+				}
+			});
+		}
+
+		if (
+			error.name === 'SequelizeUniqueConstraintError' &&
+			_.some(error.errors, _.matches({
+				type: 'unique violation',
+				path: 'username'
+			}))
+		) {
+			throw new HttpError(400, 'invalid_input', {
+				errors: {
+					username: {
+						param: 'username',
+						msg: 'Username is taken',
+						value: _.find(error.errors, {path: 'username'}).value
+					}
+				}
+			})
+		}
+
+		throw error;
+	}
+}
+
 const users = Router();
 
 users.post('/signup',
 	validate({
 		body: {
 			username: {
-				notEmpty: true,
-				matches: {
-					options: ['^[a-zA-Z0-9._]+$']
-				},
-				errorMessage: 'Invalid username'
+				...schemas.username,
+				notEmpty: true
 			},
 			email: {
-				notEmpty: true,
-				matches: {
-					options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
-				},
-				errorMessage: 'Invalid email'
+				...schemas.email,
+				notEmpty: true
 			},
 			password: {
-				notEmpty: true,
-				isLength: {
-					options: [{min: 6}],
-					errorMessage: 'Password must be at least 6 characters long'
-				},
-				errorMessage: 'Invalid password'
+				...schemas.password,
+				notEmpty: true
 			}
 		}
 	}),
 	wrap(async function(req, res) {
-		try {
-			const user = User.build({
-				email: req.body.email,
-				username: req.body.username
-			});
+		const user = User.build({
+			email: req.body.email,
+			username: req.body.username
+		});
 
-			await user.setPassword(req.body.password);
-			await user.save();
+		await user.setPassword(req.body.password);
+		await catchUniqueConstraintError(
+			user.save()
+		);
 
-			const access_token = signToken({
-				user_id: user.id
-			});
+		const access_token = signToken({
+			user_id: user.id
+		});
 
-			res.status(201).json({
-				access_token, user
-			});
-		} catch (error) {
-			// @TODO refactor
-			if (
-				error.name === 'SequelizeUniqueConstraintError' &&
-				_.some(error.errors, _.matches({
-					type: 'unique violation',
-					path: 'email'
-				}))
-			) {
-				throw new HttpError(400, 'invalid_input', {
-					errors: {
-						email: {
-							param: 'email',
-							msg: 'Email is already in use',
-							value: req.body.email
-						}
-					}
-				});
-			} else if (
-				error.name === 'SequelizeUniqueConstraintError' &&
-				_.some(error.errors, _.matches({
-					type: 'unique violation',
-					path: 'username'
-				}))
-			) {
-				throw new HttpError(400, 'invalid_input', {
-					errors: {
-						username: {
-							param: 'username',
-							msg: 'Username is taken',
-							value: req.body.username
-						}
-					}
-				})
-			} else {
-				throw error;
-			}
-		}
+		res.status(201).json({
+			access_token, user
+		});
 	})
 );
 
@@ -151,6 +171,7 @@ users.use('/signin/:provider',
 
 function storeReferer(req, res, next) {
 	req.session.referer = req.get('Referrer');
+	next();
 }
 
 function passportCallbackHandler(provider) {
@@ -166,7 +187,7 @@ function passportCallbackHandler(provider) {
 			failureCallback = config.get('socialAuth.callbackFailure');
 		}
 
-		passport.authenticate('provider', {
+		passport.authenticate(provider, {
 			failureRedirect: failureCallback,
 			session: false
 		})(req, res, next);
@@ -185,21 +206,10 @@ function redirectUser(req, res) {
 		callback = config.get('socialAuth.callback');
 	}
 	
-	if (req.user.access_token) {
-		res.redirect(callback + '?' + qs.stringify({
-			status: 'authroized',
-			access_token: req.user.access_token
-		}));
-		return;
-	}
-
-	if (req.user.auth_code) {
-		res.redirect(callback + '?' + qs.stringify({
-			status: 'not_authorized',
-			auth_code: req.user.auth_code
-		}));
-		return;
-	}
+	res.redirect(callback + '?' + qs.stringify({
+		status: 'authroized',
+		access_token: req.user.access_token
+	}));
 }
 
 // Facebook
@@ -222,7 +232,7 @@ users.get('/signin/twitter',
 	})
 );
 users.get('/signin/twitter/callback',
-	passportCallbackHandler('facebook'),
+	passportCallbackHandler('twitter'),
 	redirectUser
 );
 
@@ -235,40 +245,8 @@ users.get('/signin/google',
 	})
 );
 users.get('/signin/google/callback',
-	passportCallbackHandler('facebook'),
+	passportCallbackHandler('google'),
 	redirectUser
-);
-
-users.post('/link',
-	wrap(async function(req, res) {
-		const authInfo = verifyToken(req.body.auth_code);
-
-		if (req.user[authInfo.path]) {
-			throw new HttpError(422, `${authInfo.path}_is_already_assigned`);	
-		}
-
-
-		try {
-			await req.user.update({
-				[authInfo.path]: authInfo.social_id
-			});
-		} catch (error) {
-			if (
-				error.name === 'SequelizeUniqueConstraintError' &&
-				_.some(error.errors, _.matches({
-					type: 'unique violation'
-				}))
-			) {
-				throw new HttpError(400, '${authInfo}_is_already_assigned_to_another_account');
-			} else {
-				throw error;
-			}
-		}
-
-		res.status(200).json({
-			user: req.user
-		});
-	})
 );
 
 users.get('/me',
@@ -285,15 +263,16 @@ users.post('/me',
 	validate({
 		body: {
 			password: {
-				errorMessage: 'Invalid password'
+				optional: true,
+				...schemas.password
+			},
+			username: {
+				optional: true,
+				...schemas.username
 			}
 		}
 	}),
 	wrap(async function(req, res) {
-		await req.user.update(
-			_.pick(req.body, ['username'])
-		);
-
 		req.user.set(
 			_.pick(req.body, ['username'])
 		);
@@ -306,7 +285,9 @@ users.post('/me',
 			}
 		}
 
-		await req.user.save();
+		await catchUniqueConstraintError(
+			req.user.save()
+		);
 
 		res.status(200).json({
 			user: req.user
