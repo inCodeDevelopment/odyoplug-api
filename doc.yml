@@ -109,7 +109,13 @@ paths:
                                 username: ''
                                 email: fubar@gmail.com
                 '404':
-                    $ref: '#/responses/NotFound'
+                    description: User not found
+                    schema:
+                        $ref: '#/definitions/GenericError'
+                    examples:
+                        application/json:
+                            error: user_not_found
+                            message: User with such email/username and password not found
     /users/signin/{provider}:
         get:
             tags: [user]
@@ -260,6 +266,8 @@ definitions:
         type: object
         properties:
             error:
+                type: string
+            message:
                 type: string
     InvalidInputError:
         type: object

@@ -151,12 +151,8 @@ users.post('/signin',
 				access_token, user
 			});
 		} else {
-			throw new HttpError(400, 'invalid_input', {
-				errors: {
-					_form: {
-						msg: 'User not found'
-					}
-				}
+			throw new HttpError(404, 'user_not_found', {
+				message: 'User with such email/username and password not found'
 			});
 		}
 	})
