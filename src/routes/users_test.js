@@ -143,14 +143,10 @@ describe('api /users', function () {
 					password: '000000'
 				});
 
-			signInResponse.statusCode.should.be.equal(400);
+			signInResponse.statusCode.should.be.equal(404);
 			signInResponse.body.should.be.eql({
-				error: 'invalid_input',
-				errors: {
-					_form: {
-						msg: 'User not found'
-					}
-				}
+				error: 'user_not_found',
+				message: "User with such email/username and password not found"
 			});
 		});
 
@@ -163,14 +159,10 @@ describe('api /users', function () {
 					password: '000000'
 				});
 
-			signInResponse.statusCode.should.be.equal(400);
+			signInResponse.statusCode.should.be.equal(404);
 			signInResponse.body.should.be.eql({
-				error: 'invalid_input',
-				errors: {
-					_form: {
-						msg: 'User not found'
-					}
-				}
+				error: 'user_not_found',
+				message: "User with such email/username and password not found"
 			});
 		});
 	});
@@ -283,7 +275,7 @@ describe('api /users', function () {
 					password: '123123'
 				});
 			
-			signInResponse.statusCode.should.be.equal(400);
+			signInResponse.statusCode.should.be.equal(404);
 		});
 	});
 });
