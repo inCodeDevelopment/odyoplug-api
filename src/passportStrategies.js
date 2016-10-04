@@ -17,7 +17,7 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 			})
 		};
 	}
-
+	
 	(async function() {
 		const userBySocialId = await User.findOne({
 			where: {
@@ -83,7 +83,8 @@ export default function() {
 		clientID: config.get('socialAuth.facebook.clientId'),
 		clientSecret: config.get('socialAuth.facebook.clientSecret'),
 		callbackURL: config.get('baseUrl') + `/api/users/signin/facebook/callback`,
-		passReqToCallback: true
+		passReqToCallback: true,
+		profileFields: ['id', 'emails', 'name']
 	}, verifyUser));
 
 	passport.use(new TwitterStrategy({

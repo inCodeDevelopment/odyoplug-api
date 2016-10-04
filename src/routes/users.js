@@ -212,7 +212,8 @@ function redirectUser(req, res) {
 users.get('/signin/facebook',
 	storeReferer,
 	passport.authenticate('facebook', {
-		session: false
+		session: false,
+		scope: 'email'
 	})
 );
 users.get('/signin/facebook/callback',
@@ -236,7 +237,7 @@ users.get('/signin/twitter/callback',
 users.get('/signin/google',
 	storeReferer,
 	passport.authenticate('google', {
-		scope: 'profile',
+		scope: 'profile email',
 		session: false
 	})
 );
