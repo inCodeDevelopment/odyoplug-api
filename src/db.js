@@ -84,4 +84,52 @@ export const Genre = db.define('genre', {
 	timestamps: false
 });
 
+export const BeatFile = db.define('beatFile', {
+	url: {
+		type: Sequelize.STRING,
+		allowNull: false
+	},
+	duration: {
+		type: Sequelize.INTEGER,
+		allowNull: false
+	}
+}, {
+	timestamps: false
+});
+
+export const Beat = db.define('beat', {
+	name: {
+		type: Sequelize.STRING,
+		allowNull: false
+	},
+	tempo: {
+		type: Sequelize.INTEGER,
+		allowNull: false
+	},
+	price: {
+		type: Sequelize.FLOAT,
+		allowNull: false
+	}
+}, {
+	timestamps: true
+});
+
+Beat.belongsTo(Genre);
+
+Beat.belongsTo(User, {
+	onDelete: 'CASCADE'
+});
+User.hasMany(Beat, {
+	onDelete: 'CASCADE'
+});
+
+BeatFile.belongsTo(Beat, {
+	as: 'beat',
+	onDelete: 'CASCADE'
+});
+Beat.hasOne(BeatFile, {
+	as: 'file',
+	onDelete: 'CASCADE'
+});
+
 export const ready = db.authenticate();
