@@ -80,6 +80,8 @@ export const Genre = db.define('genre', {
 		type: Sequelize.STRING,
 		allowNull: true
 	}
+}, {
+	timestamps: false
 });
 
 export const ready = db.authenticate();
