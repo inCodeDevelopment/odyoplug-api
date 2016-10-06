@@ -1,18 +1,9 @@
 import db from 'db';
 import createFixtures from 'fixtures';
+import { createSequences } from 'dbUtils';
 
 db.sync()
-	.then(() =>
-		db.query(`
-			CREATE SEQUENCE public.users_social_id_seq
-				INCREMENT 1
-				MINVALUE 1
-				MAXVALUE 9223372036854775807
-				START 1
-				CACHE 1
-				OWNED BY users.username;
-		`)
-	)
+	.then(() => createSequences())
 	.then(() => createFixtures())
 	.then(() => {
 		console.log('DB bootstraped');
