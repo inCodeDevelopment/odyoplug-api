@@ -1,6 +1,6 @@
 import config from 'config';
 import supertest from 'supertest';
-import { clear as clearDb } from 'db';
+import { clear as clearDb } from 'dbUtils';
 import app from 'app';
 import should from 'should';
 
@@ -11,7 +11,7 @@ describe('api /users', function () {
 	describe('POST /signup', function () {
 		it('should create user and return it', async function () {
 			const agent = supertest(app);
-			
+
 			const createUserResponse = await agent.post('/api/users/signup')
 				.send({
 					email: 'test@gmail.com',
@@ -211,7 +211,7 @@ describe('api /users', function () {
 					password: '123123123',
 					username: 'test'
 				});
-			
+
 			access_token = signUpReponse.body.access_token;
 		});
 
@@ -274,7 +274,7 @@ describe('api /users', function () {
 					login: 'test@gmail.com',
 					password: '123123'
 				});
-			
+
 			signInResponse.statusCode.should.be.equal(404);
 		});
 	});

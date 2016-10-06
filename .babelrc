@@ -12,6 +12,9 @@
 		"transform-promise-to-bluebird",
 		["module-resolver", {
 			"root": ["./src"],
+			"alias": {
+				"fixtures": "./fixtures"
+			}
 		}]
 	]
 }

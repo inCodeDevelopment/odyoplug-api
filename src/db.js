@@ -75,11 +75,11 @@ export const User = db.define('user', {
 	}
 });
 
-export function clear() {
-	return db.sync({
-		match: /test$/,
-		force: true
-	});
-}
+export const Genre = db.define('genre', {
+	name: {
+		type: Sequelize.STRING,
+		allowNull: true
+	}
+});
 
 export const ready = db.authenticate();

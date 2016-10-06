@@ -1,4 +1,5 @@
 import db from 'db';
+import createFixtures from 'fixtures';
 
 db.sync()
 	.then(() =>
@@ -12,6 +13,7 @@ db.sync()
 				OWNED BY users.username;
 		`)
 	)
+	.then(() => createFixtures())
 	.then(() => {
 		console.log('DB bootstraped');
 	})

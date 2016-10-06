@@ -14,6 +14,10 @@ info:
 tags:
   - name: user
     description: User operations
+  - name: bit
+    description: Bit operations
+  - name: genre
+    description: Genre operations
 
 securityDefinitions:
     access_token:
@@ -87,7 +91,7 @@ paths:
                             type: string
                             description: Username or email
                         password:
-                            type: string                
+                            type: string
                     example:
                         login: fubar@gmail.com
                         password: catKeyboard
@@ -124,10 +128,10 @@ paths:
                 Sign in user via social network and redirects user to query.redirect_url.
 
                 If authorization failed it redirects with error in query params.
-                
+
                 If local account linked with this social account exists redirects with access_token in query
-                
-                If no local account linked with this social account found redirects with auth_code in query, that can be use to link local account with social account. 
+
+                If no local account linked with this social account found redirects with auth_code in query, that can be use to link local account with social account.
             operationId: userSignInSocial
             parameters:
               - in: path
@@ -142,29 +146,6 @@ paths:
             responses:
                 default:
                     description: Redirects user to social network
-    /users/link:
-        post:
-            tags: [user]
-            summary: Link social account
-            description: |
-                Links current user with social account using auth_code obtained with `/users/signin/{provider}` route
-            operationId: userLink
-            security:
-              - access_token: []
-            parameters:
-              - in: body
-                name: body
-                schema:
-                    type: object
-                    required: [auth_code]
-                    properties:
-                        auth_code:
-                            type: string           
-                    example:
-                        auth_code: da2dq43fq4ff0qf4309uqh4f3
-            responses:
-                '200':
-                    description: Linked
     /users/me:
         get:
             tags: [user]
@@ -223,6 +204,22 @@ paths:
                                 id: 4
                                 username: 'Foo Bar'
                                 email: fubar@gmail.com
+    /genres:
+        get:
+            tags: [genre]
+            summary: Get list of genres
+            operationId: genresGet
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            genres:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/Genre'
+
 
 responses:
     NotFound:
@@ -255,13 +252,23 @@ definitions:
             - email
         properties:
             id:
-                type: string
+                type: number
             username:
                 type: string
                 minLength: 1
             email:
                 type: string
-                format: email       
+                format: email
+    Genre:
+        type: object
+        required:
+            - id
+            - name
+        properties:
+            id:
+                type: number
+            name:
+                type: string
     GenericError:
         type: object
         properties:
