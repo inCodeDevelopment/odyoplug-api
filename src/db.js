@@ -122,14 +122,8 @@ Beat.belongsTo(User, {
 User.hasMany(Beat, {
 	onDelete: 'CASCADE'
 });
-
-BeatFile.belongsTo(Beat, {
-	as: 'beat',
-	onDelete: 'CASCADE'
-});
-Beat.hasOne(BeatFile, {
-	as: 'file',
-	onDelete: 'CASCADE'
+Beat.belongsTo(BeatFile, {
+	as: 'file'
 });
 
 export const ready = db.authenticate();

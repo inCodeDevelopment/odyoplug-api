@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import routes from 'routes';
+import uploads from 'uploads';
 import { authorization, errorHandler } from 'middlewares';
 import expressValidator from 'express-validator';
 import { ready as dbReady } from 'db';
@@ -18,6 +19,7 @@ app.use(expressValidator());
 app.use(authorization);
 
 app.use('/api', routes);
+app.use('/uploads', uploads);
 
 app.use(errorHandler);
 

@@ -23,9 +23,12 @@
     "es6-error": "^3.1.0",
     "express": "^4.14.0",
     "express-validator": "^2.20.10",
+    "fs-promise": "^0.5.0",
     "jsonwebtoken": "^7.1.9",
     "latinize": "^0.3.0",
     "lodash": "^4.14.2",
+    "mime-types": "^2.1.12",
+    "multer": "^1.2.0",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
     "passport-google-oauth": "^1.0.0",
@@ -33,6 +36,7 @@
     "pg": "^6.1.0",
     "pg-hstore": "^2.3.2",
     "sequelize": "^3.24.2",
+    "sha1": "^1.1.1",
     "winston": "^2.2.0"
   },
   "devDependencies": {

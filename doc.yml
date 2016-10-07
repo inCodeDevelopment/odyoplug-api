@@ -247,7 +247,7 @@ paths:
     /beats:
         post:
             tags: [beat]
-            summary: Create beate
+            summary: Create beat
             operationId: beatsCreate
             security:
                - accessToken: []
@@ -261,6 +261,8 @@ paths:
                             type: string
                         tempo:
                             type: string
+                        price:
+                            type: number
                         genreId:
                             type: number
                         fileId:
@@ -268,6 +270,7 @@ paths:
                     example:
                         name: FooBar
                         tempo: 145
+                        price: 3.99
                         genreId: 13
                         fileId: 42
             responses:

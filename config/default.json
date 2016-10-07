@@ -27,5 +27,9 @@
 			"consumerKey": "",
 			"consumerSecret": ""
 		}
+	},
+	"beatFileStorage": {
+		"allowedMimeTypes": ["audio/mpeg", "audio/vnd.wave", "audio/mp3"],
+		"destination": "/tmp"
 	}
 }

@@ -201,7 +201,7 @@ function redirectUser(req, res) {
 	} else {
 		callback = config.get('socialAuth.callback');
 	}
-	
+
 	res.redirect(callback + '?' + qs.stringify({
 		status: 'authroized',
 		access_token: req.user.access_token
