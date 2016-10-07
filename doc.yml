@@ -260,7 +260,7 @@ paths:
                         name:
                             type: string
                         tempo:
-                            type: string
+                            type: number
                         price:
                             type: number
                         genreId:
@@ -359,7 +359,7 @@ definitions:
             name:
                 type: string
             tempo:
-                type: string
+                type: number
             price:
                 type: number
             file:

@@ -33,7 +33,7 @@ describe('api /beats', function () {
       uploadBeatFileResponse.statusCode.should.be.equal(200);
       uploadBeatFileResponse.body.should.have.property('file');
       should(uploadBeatFileResponse.body.file.url).be.String();
-      
+
       (await agent.get(uploadBeatFileResponse.body.file.url))
         .statusCode.should.be.equal(200);
     });
@@ -65,9 +65,42 @@ describe('api /beats', function () {
   });
 
 	describe('POST /', function () {
+    let fileId;
+
+    beforeEach(async function() {
+      const uploadBeatFileResponse = await agent.post('/api/beats/files')
+        .set('Authorization', accessToken)
+        .attach('beatFile', 'src/assets_test/audio.mp3')
+        .send({});
+
+      fileId = uploadBeatFileResponse.body.file.id;
+    });
+
+    it('should create beat', async function() {
+      const createBeatResponse = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 13,
+          fileId: fileId
+        });
+
+      createBeatResponse.statusCode.should.be.equal(200);
+      const beat = createBeatResponse.body.beat;
+
+      beat.should.containEql({
+        genreId: 13,
+        name: "FooBar",
+        tempo: 145,
+        price: 3.99
+      });
+      beat.should.have.properties('id', 'userId', 'createdAt', 'updatedAt');
+    });
+    it('should return file info');
+    it('should accept only unique file ids');
     it('should reject beats with non-existing genre');
     it('should reject beats with not-existing fileId');
-    it('should create beat');
-    it('should return file info');
 	});
 });
