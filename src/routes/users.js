@@ -12,6 +12,7 @@ import { HttpError } from 'HttpError';
 import { wrap } from './utils';
 import _ from 'lodash';
 import url from 'url';
+import sequelize from 'sequelize';
 
 const schemas = {
 	username: {
@@ -36,12 +37,9 @@ const schemas = {
 	}
 };
 
-async function catchUniqueConstraintError(promise) {
-	try {
-		return (await promise);
-	} catch (error) {
+async function catchUniqueConstraintError(error) {
 		if (
-			error.name === 'SequelizeUniqueConstraintError' &&
+			error instanceof sequelize.UniqueConstraintError &&
 			_.some(error.errors, _.matches({
 				type: 'unique violation',
 				path: 'email'
@@ -59,7 +57,7 @@ async function catchUniqueConstraintError(promise) {
 		}
 
 		if (
-			error.name === 'SequelizeUniqueConstraintError' &&
+			error instanceof sequelize.UniqueConstraintError &&
 			_.some(error.errors, _.matches({
 				type: 'unique violation',
 				path: 'username'
@@ -77,7 +75,6 @@ async function catchUniqueConstraintError(promise) {
 		}
 
 		throw error;
-	}
 }
 
 const users = Router();
@@ -106,9 +103,7 @@ users.post('/signup',
 		});
 
 		await user.setPassword(req.body.password);
-		await catchUniqueConstraintError(
-			user.save()
-		);
+		await user.save().catch(catchUniqueConstraintError);
 
 		const access_token = signToken({
 			user_id: user.id
@@ -282,9 +277,7 @@ users.post('/me',
 			}
 		}
 
-		await catchUniqueConstraintError(
-			req.user.save()
-		);
+		await req.user.save().catch(catchUniqueConstraintError);
 
 		res.status(200).json({
 			user: req.user

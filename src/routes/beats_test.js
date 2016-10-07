@@ -99,8 +99,77 @@ describe('api /beats', function () {
       beat.should.have.properties('id', 'userId', 'createdAt', 'updatedAt');
     });
     it('should return file info');
-    it('should accept only unique file ids');
-    it('should reject beats with non-existing genre');
-    it('should reject beats with not-existing fileId');
+    it('should reject beats with not-existing fileId', async function() {
+      const createBeatResponse = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 13,
+          fileId: fileId+100
+        });
+
+      createBeatResponse.statusCode.should.be.equal(400);
+      createBeatResponse.body.should.containEql({
+        errors: {
+          fileId: {
+            msg: 'Invalid fileId'
+          }
+        }
+      })
+    });
+    it('should reject beats with non-existing genre', async function() {
+      const createBeatResponse = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 1300,
+          fileId: fileId
+        });
+
+      createBeatResponse.statusCode.should.be.equal(400);
+      createBeatResponse.body.should.containEql({
+        errors: {
+          genreId: {
+            msg: 'Invalid genreId'
+          }
+        }
+      })
+    });
+    it('should accept only unique file ids', async function() {
+      const createBeatResponse = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 13,
+          fileId: fileId
+        });
+
+      createBeatResponse.statusCode.should.be.equal(200);
+
+      const createBeatResponse2 = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 13,
+          fileId: fileId
+        });
+
+      createBeatResponse2.statusCode.should.be.equal(400);
+      createBeatResponse2.body.should.containEql({
+        errors: {
+          fileId: {
+            msg: 'This file already in use'
+          }
+        }
+      })
+    });
 	});
 });

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import config from 'config';
 import { authorizedOnly, validate } from 'middlewares';
+import sequelize from 'sequelize';
+import _ from 'lodash';
 
 import {
 	uploader as beatFileUploader,
@@ -8,6 +10,7 @@ import {
 } from 'multers/beatFile';
 
 import { Beat, BeatFile } from 'db';
+import { HttpError } from 'HttpError';
 
 import { wrap } from './utils';
 
@@ -35,14 +38,45 @@ beats.post('/',
     }
   }),
   wrap(async function(req, res) {
-    const beat = await Beat.create({
-      ...req.body,
-      userId: req.user_id
-    });
+		try {
+	    const beat = await Beat.create({
+	      ...req.body,
+	      userId: req.user_id
+	    });
 
-    res.send({
-      beat
-    })
+	    res.send({
+	      beat
+	    });
+		} catch (err) {
+			if (err instanceof sequelize.ForeignKeyConstraintError) {
+				const fKey = err.original.constraint.split('_')[1];
+
+				throw new HttpError(400, 'invalid_input', {
+					errors: {
+						[fKey]: {
+							msg: `Invalid ${fKey}`
+						}
+					}
+				});
+			}
+
+			if (err instanceof sequelize.UniqueConstraintError &&
+				_.some(err.errors, _.matches({
+					type: 'unique violation',
+					path: 'fileId'
+				}))
+			) {
+				throw new HttpError(400, 'invalid_input', {
+					errors: {
+						fileId: {
+							msg: 'This file already in use'
+						}
+					}
+				});
+			}
+
+			throw err;
+		}
   })
 );
 

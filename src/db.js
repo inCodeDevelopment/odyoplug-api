@@ -109,6 +109,10 @@ export const Beat = db.define('beat', {
 	price: {
 		type: Sequelize.FLOAT,
 		allowNull: false
+	},
+	fileId: {
+		type: Sequelize.INTEGER,
+		unique: true
 	}
 }, {
 	timestamps: true
