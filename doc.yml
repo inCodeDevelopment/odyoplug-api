@@ -14,8 +14,8 @@ info:
 tags:
   - name: user
     description: User operations
-  - name: bit
-    description: Bit operations
+  - name: beat
+    description: Beat operations
   - name: genre
     description: Genre operations
 
@@ -219,7 +219,65 @@ paths:
                                 type: array
                                 items:
                                     $ref: '#/definitions/Genre'
-
+    /beats/files:
+        post:
+            tags: [beat]
+            summary: Upload beat file
+            operationId: beatsUploadFile
+            security:
+              - accessToken: []
+            parameters:
+              - in: formData
+                name: beatFile
+                type: file
+            responses:
+                '200':
+                    description: Uploaded
+                    schema:
+                        type: object
+                        properties:
+                            file:
+                                $ref: '#/definitions/BeatFile'
+                    examples:
+                        application/json:
+                            file:
+                                id: 4
+                                duration: 128
+                                url: /beatFiles/1/d4f2f21d13d123d.mp3
+    /beats:
+        post:
+            tags: [beat]
+            summary: Create beate
+            operationId: beatsCreate
+            security:
+               - accessToken: []
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        name:
+                            type: string
+                        tempo:
+                            type: string
+                        genreId:
+                            type: number
+                        fileId:
+                            type: number
+                    example:
+                        name: FooBar
+                        tempo: 145
+                        genreId: 13
+                        fileId: 42
+            responses:
+                '200':
+                    description: Created
+                    schema:
+                        type: object
+                        properties:
+                            beat:
+                                $ref: '#/definitions/Beat'
 
 responses:
     NotFound:
@@ -259,6 +317,58 @@ definitions:
             email:
                 type: string
                 format: email
+    BeatFile:
+        type: object
+        required:
+           - id
+           - url
+           - duration
+        properties:
+            id:
+                type: number
+            url:
+                type: string
+                format: uri
+            duration:
+                type: number
+    Beat:
+        type: object
+        required:
+            - id
+            - userId
+            - genreId
+            - createdAt
+            - updatedAt
+            - name
+            - tempo
+            - file
+        properties:
+            id:
+                type: number
+            userId:
+                type: number
+            genreId:
+                type: number
+            createdAt:
+                type: number
+            updatedAt:
+                type: number
+            name:
+                type: string
+            tempo:
+                type: string
+            price:
+                type: number
+            file:
+                type: object
+                properties:
+                    url:
+                        type: string
+                        format: uri
+                    duration:
+                        type: number
+
+
     Genre:
         type: object
         required:
