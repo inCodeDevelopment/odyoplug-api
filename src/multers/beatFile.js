@@ -5,6 +5,7 @@ import sha1 from 'sha1';
 import mimeTypes from 'mime-types';
 import fs from 'fs-promise';
 import { HttpError } from 'HttpError';
+import ffprobe from 'node-ffprobe';
 
 export const storage = multer.diskStorage({
 	destination(req, file, cb) {
@@ -12,15 +13,37 @@ export const storage = multer.diskStorage({
 	},
 
 	filename(req, file, cb) {
-		const extension = mimeTypes.extension(file.mimetype);
+		let originalname;
 
-		cb(null, `${sha1(req.user_id + file.originalname)}.${extension}`);
+		if (file.originalname) {
+			originalname = file.originalname;
+		} else {
+			originalname = 'audio.' + mimeTypes.extension(file.mimetype);
+		}
+
+		cb(null, `${sha1(req.user_id + file.originalname + Date.now())}$_$${originalname}`);
 	}
 });
 
 storage.destroy = async function(filename) {
 	await fs.unlink(config.get('beatFileStorage.destination') + '/' + filename);
 };
+
+storage.getFileInfo = function(req, res, next) {
+	ffprobe(req.file.path, (err, info) => {
+		if (err) {
+			return next(err);
+		}
+
+		try {
+			req.file.duration = info.format.duration;
+		} catch (err) {
+			return next(err);
+		}
+
+		next(null);
+	});
+}
 
 export const uploader = multer({
 	storage: storage,

@@ -49,10 +49,11 @@ beats.post('/',
 beats.post('/files',
   authorizedOnly,
   beatFileUploader.single('beatFile'),
+	beatFileStorage.getFileInfo,
   wrap(async function(req, res) {
     const beatFile = await BeatFile.create({
       url: `/uploads/beats/${req.file.filename}`,
-      duration: 0 // @TODO
+      duration: req.file.duration
     });
 
     res.status(200).json({

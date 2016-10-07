@@ -1,5 +1,6 @@
 node_modules
 dist
+**/.DS_STORE
 
 config/**/*
 !config/custom-environment-variables.json

@@ -33,7 +33,7 @@ describe('api /beats', function () {
       uploadBeatFileResponse.statusCode.should.be.equal(200);
       uploadBeatFileResponse.body.should.have.property('file');
       should(uploadBeatFileResponse.body.file.url).be.String();
-
+      
       (await agent.get(uploadBeatFileResponse.body.file.url))
         .statusCode.should.be.equal(200);
     });
@@ -52,7 +52,16 @@ describe('api /beats', function () {
         .errorMessage.should.be.equal('Only mp3 or wav files are allowed');
     });
 
-    it('should calculate file duration')
+    it('should calculate file duration', async function() {
+      const uploadBeatFileResponse = await agent.post('/api/beats/files')
+        .set('Authorization', accessToken)
+        .attach('beatFile', 'src/assets_test/audio.mp3')
+        .send({});
+
+      uploadBeatFileResponse.statusCode.should.be.equal(200);
+      uploadBeatFileResponse.body.should.have.property('file');
+      uploadBeatFileResponse.body.file.duration.should.be.approximately(373, 1);
+    })
   });
 
 	describe('POST /', function () {

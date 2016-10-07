@@ -90,7 +90,7 @@ export const BeatFile = db.define('beatFile', {
 		allowNull: false
 	},
 	duration: {
-		type: Sequelize.INTEGER,
+		type: Sequelize.FLOAT,
 		allowNull: false
 	}
 }, {
