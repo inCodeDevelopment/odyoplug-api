@@ -3,7 +3,7 @@ import { OAuth2Strategy as GoogleStrategy } from 'passport-google-oauth'
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { Strategy as TwitterStrategy } from 'passport-twitter';
 import config from 'config';
-import { sign as signToken } from 'token';
+import { sign as signToken, verify as verifyToken } from 'token';
 import { User } from 'db';
 import _ from 'lodash';
 import sequelize from 'sequelize';
@@ -17,8 +17,20 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 			})
 		};
 	}
-	
+
 	(async function() {
+		if (req.session.accessToken) {
+			const userId = verifyToken(req.session.accessToken).user_id;
+			const user = User.findById(userId);
+
+			if (user) {
+				await user.update({
+					[profile.provider+'Id']: profile.id
+				});
+				return returnAccessToken(user)
+			}
+		}
+
 		const userBySocialId = await User.findOne({
 			where: {
 				[profile.provider+'Id']: profile.id
@@ -29,7 +41,6 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 			return returnAccessToken(userBySocialId)
 		}
 
-		// @TODO check security threats
 		if (profile.emails && profile.emails.length !== 0) {
 			const userByEmail = await User.findOne({
 				where: {
@@ -40,6 +51,9 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 			});
 
 			if (userByEmail) {
+				await userByEmail.update({
+					[profile.provider+'Id']: profile.id
+				});
 				return returnAccessToken(userByEmail)
 			}
 		}

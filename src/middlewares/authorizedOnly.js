@@ -7,12 +7,8 @@ export default async function(req, res, next) {
 			throw new HttpError(403, 'access_denied');
 		}
 
-		req.user = await User.findOne({
-			where: {
-				id: req.user_id
-			}
-		});
-		
+		req.user = await User.findById(req.user_id);
+
 		if (!req.user) {
 			throw new HttpError(403, 'access_denied');
 		}

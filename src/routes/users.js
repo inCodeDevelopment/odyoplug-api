@@ -160,7 +160,11 @@ users.use('/signin/:provider',
 	})
 );
 
-function storeReferer(req, res, next) {
+function storeAuthInfo(req, res, next) {
+	if (req.query.accessToken) {
+		req.session.accessToken = req.query.accessToken;
+	}
+	
 	req.session.referer = req.get('Referrer');
 	next();
 }
@@ -205,7 +209,7 @@ function redirectUser(req, res) {
 
 // Facebook
 users.get('/signin/facebook',
-	storeReferer,
+	storeAuthInfo,
 	passport.authenticate('facebook', {
 		session: false,
 		scope: 'email'
@@ -218,7 +222,7 @@ users.get('/signin/facebook/callback',
 
 // Twitter
 users.get('/signin/twitter',
-	storeReferer,
+	storeAuthInfo,
 	passport.authenticate('twitter', {
 		session: false
 	})
@@ -230,7 +234,7 @@ users.get('/signin/twitter/callback',
 
 // Google
 users.get('/signin/google',
-	storeReferer,
+	storeAuthInfo,
 	passport.authenticate('google', {
 		scope: 'profile email',
 		session: false
