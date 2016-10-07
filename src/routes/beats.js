@@ -43,9 +43,12 @@ beats.post('/',
 	      ...req.body,
 	      userId: req.user_id
 	    });
-
+			console.log()
 	    res.send({
-	      beat
+	  		beat: {
+					...beat.toJSON(),
+					file: await beat.getFile()
+				}
 	    });
 		} catch (err) {
 			if (err instanceof sequelize.ForeignKeyConstraintError) {

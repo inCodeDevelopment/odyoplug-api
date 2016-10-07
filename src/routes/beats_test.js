@@ -97,8 +97,10 @@ describe('api /beats', function () {
         price: 3.99
       });
       beat.should.have.properties('id', 'userId', 'createdAt', 'updatedAt');
+      beat.file.should.containEql({
+        id: fileId
+      });
     });
-    it('should return file info');
     it('should reject beats with not-existing fileId', async function() {
       const createBeatResponse = await agent.post('/api/beats')
         .set('Authorization', accessToken)
