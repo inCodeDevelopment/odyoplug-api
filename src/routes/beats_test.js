@@ -37,7 +37,21 @@ describe('api /beats', function () {
       (await agent.get(uploadBeatFileResponse.body.file.url))
         .statusCode.should.be.equal(200);
     });
-    it('should reject non mp3/waw files');
+
+    it('should reject non mp3/waw files', async function() {
+      const uploadBeatFileResponse = await agent.post('/api/beats/files')
+        .set('Authorization', accessToken)
+        .attach('beatFile', 'src/app.js')
+        .send({});
+
+      uploadBeatFileResponse.statusCode.should.be.equal(400);
+      uploadBeatFileResponse.body.should.have.property('error');
+      uploadBeatFileResponse.body.error.should.be.equal('file_is_not_allowed');
+      uploadBeatFileResponse.body.errors.should.have.property('beatFile');
+      uploadBeatFileResponse.body.errors.beatFile
+        .errorMessage.should.be.equal('Only mp3 or wav files are allowed');
+    });
+
     it('should calculate file duration')
   });
 

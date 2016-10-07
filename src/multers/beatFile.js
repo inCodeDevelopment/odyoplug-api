@@ -27,7 +27,12 @@ export const uploader = multer({
 	fileFilter(req, file, cb) {
 		if (!config.get('beatFileStorage.allowedMimeTypes').includes(file.mimetype)) {
 			cb(new HttpError(400, 'file_is_not_allowed', {
-				allowedMimeTypes: config.get('beatFileStorage.allowedMimeTypes')
+				allowedMimeTypes: config.get('beatFileStorage.allowedMimeTypes'),
+				errors: {
+					beatFile: {
+						errorMessage: "Only mp3 or wav files are allowed"
+					}
+				}
 			}))
 		} else {
 			cb(null, true);
