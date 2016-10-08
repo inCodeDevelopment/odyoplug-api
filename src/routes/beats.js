@@ -87,7 +87,13 @@ beats.get('/user/:userId',
 		const beats = await Beat.findAll({
 			where: {
 				userId: req.params.userId
-			}
+			},
+			include: [
+				{
+					model: BeatFile,
+					as: 'file'
+				}
+			]
 		});
 
 		res.status(200).json({beats});
