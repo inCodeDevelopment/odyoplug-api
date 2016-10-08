@@ -11,7 +11,7 @@
 		"secret": "JWT_SECREGT"
 	},
 	"cookieSessionSecret": "COOKIE_SESSION_SECRET",
-	
+
 	"socialAuth": {
 		"resolveCallbackFromReferer": "SOCIAL_AUTH_RESOLVE_CALLBACK_FROM_REFERER",
 		"callback": "SOCIAL_AUTH_CALLBACK",
@@ -28,5 +28,12 @@
 			"consumerKey": "SOCIAL_AUTH_TWITTER_CONSUMER_KEY",
 			"consumerSecret": "SOCIAL_AUTH_FACEBOOK_CONSUMER_SECRET"
 		}
+	},
+	"mailer": {
+		"mailgun": {
+			"apiKey": "MAILER_MAILGUN_APIKEY",
+			"domain": "MAILER_MAILGUN_DOMAIN"
+		},
+		"from": "MAILER_FROM"
 	}
 }
