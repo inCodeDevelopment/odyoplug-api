@@ -3,6 +3,9 @@ import supertest from 'supertest';
 import { clear as clearDb } from 'dbUtils';
 import app from 'app';
 import should from 'should';
+import sinon from 'sinon';
+import mailer from 'mailer';
+import { createAndActivateUser } from './testUtils';
 
 before(app.resolveWhenReady);
 beforeEach(clearDb);
@@ -20,11 +23,26 @@ describe('api /users', function () {
 				});
 
 			createUserResponse.statusCode.should.be.equal(201);
-			createUserResponse.body.should.have.property('access_token');
 			createUserResponse.body.user.should.have.property('id');
 			createUserResponse.body.user.should.containEql({
 				email: 'test@gmail.com'
 			});
+		});
+
+		it('should send activation email', async function () {
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+			const agent = supertest(app);
+
+			const createUserResponse = await agent.post('/api/users/signup')
+				.send({
+					email: 'test@gmail.com',
+					password: '12345678',
+					username: 'test'
+				});
+
+			mailer.send.should.be.calledWithMatch('user-activation', 'test@gmail.com');
+
+			mailer.send.restore();
 		});
 
 		it('should return error on username conflict', async function () {
@@ -88,16 +106,47 @@ describe('api /users', function () {
 		});
 	});
 
-	describe('POST /signin', function () {
-		beforeEach('create user', async function () {
+	describe('POST /activate', function() {
+		let email = 'test@test.com';
+		let activationToken;
+
+		beforeEach('create user', async function() {
 			const agent = supertest(app);
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			await agent.post('/api/users/signup')
 				.send({
-					email: 'test@gmail.com',
+					email: email,
 					password: '123123123',
 					username: 'test'
 				});
+
+			activationToken = mailer.send.firstCall.args[2].activationToken;
+
+			mailer.send.restore();
+		})
+
+		it('should activate account', async function() {
+			const agent = supertest(app);
+
+			const activateResponse = await agent.post('/api/users/activate')
+				.send({email, activationToken});
+
+			activateResponse.statusCode.should.be.equal(200);
+		});
+		it('should reject invalid token', async function() {
+			const agent = supertest(app);
+
+			const activateResponse = await agent.post('/api/users/activate')
+				.send({email, activationToken:'123'});
+
+			activateResponse.statusCode.should.be.equal(400);
+		});
+	})
+
+	describe('POST /signin', function () {
+		beforeEach('create user', async function () {
+			await createAndActivateUser('test@gmail.com', 'test', '123123123')
 		});
 
 		it('should return Access-Token', async function () {
@@ -168,15 +217,8 @@ describe('api /users', function () {
 	});
 
 	describe('GET /me', function () {
-		beforeEach('create user', async function() {
-			const agent = supertest(app);
-
-			await agent.post('/api/users/signup')
-				.send({
-					email: 'test@gmail.com',
-					password: '123123123',
-					username: 'test'
-				});
+		beforeEach('create user', async function () {
+			await createAndActivateUser('test@gmail.com', 'test', '123123123')
 		});
 
 		it('should return user', async function () {
@@ -200,24 +242,24 @@ describe('api /users', function () {
 	});
 
 	describe('POST /me', function () {
-		let agent, access_token;
+		let agent, accessToken;
 
-		beforeEach(async function() {
+		beforeEach('create user', async function () {
 			agent = supertest(app);
+			await createAndActivateUser('test@gmail.com', 'test', '123123123')
 
-			const signUpReponse = await agent.post('/api/users/signup')
+			const signInResponse = await agent.post('/api/users/signin')
 				.send({
-					email: 'test@gmail.com',
-					password: '123123123',
-					username: 'test'
+					login: 'test@gmail.com',
+					password: '123123123'
 				});
 
-			access_token = signUpReponse.body.access_token;
+			accessToken = signInResponse.body.access_token;
 		});
 
 		it('should update name', async function() {
 			const updateMeResponse = await agent.post('/api/users/me')
-				.set('Authorization', access_token)
+				.set('Authorization', accessToken)
 				.send({
 					username: 'FooBar'
 				});
@@ -230,7 +272,7 @@ describe('api /users', function () {
 
 		it('should not update email', async function() {
 			const updateMeResponse = await agent.post('/api/users/me')
-				.set('Authorization', access_token)
+				.set('Authorization', accessToken)
 				.send({
 					email: 'test2@gmail.com'
 				});
@@ -242,7 +284,7 @@ describe('api /users', function () {
 
 		it('should update password', async function() {
 			const updateMeResponse = await agent.post('/api/users/me')
-				.set('Authorization', access_token)
+				.set('Authorization', accessToken)
 				.set('Password', '123123123')
 				.send({
 					password: '1366666631'
@@ -261,7 +303,7 @@ describe('api /users', function () {
 
 		it('should not update password if old password is wrong', async function() {
 			const updateMeResponse = await agent.post('/api/users/me')
-				.set('Authorization', access_token)
+				.set('Authorization', accessToken)
 				.set('Password', '123123')
 				.send({
 					password: '1366666631'

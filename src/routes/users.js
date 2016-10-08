@@ -13,6 +13,8 @@ import { wrap } from './utils';
 import _ from 'lodash';
 import url from 'url';
 import sequelize from 'sequelize';
+import uuid from 'node-uuid';
+import mailer from 'mailer';
 
 const schemas = {
 	username: {
@@ -99,19 +101,57 @@ users.post('/signup',
 	wrap(async function(req, res) {
 		const user = User.build({
 			email: req.body.email,
-			username: req.body.username
+			username: req.body.username,
+			active: false,
+			activationToken: uuid.v4()
 		});
 
 		await user.setPassword(req.body.password);
 		await user.save().catch(catchUniqueConstraintError);
 
-		const access_token = signToken({
-			user_id: user.id
+		const baseUrl = req.get('Referrer') || config.get('baseUrl');
+		await mailer.send('user-activation', req.body.email, {
+			url: `${baseUrl}/activate`,
+			activationToken: user.activationToken,
+			email: user.email,
+			username: user.username
 		});
 
-		res.status(201).json({
-			access_token, user
+		res.status(201).json({user});
+	})
+);
+
+users.post('/activate',
+	validate({
+		body: {
+			email: {
+				...schemas.email,
+				notEmpty: true
+			},
+			activationToken: {
+				errorMessage: 'Invalid activation token',
+				notEmpty: true
+			}
+		}
+	}),
+	wrap(async function(req, res) {
+		const [updated] = await User.update({
+			active: true,
+			activationToken: null
+		},{
+			where: {
+				email: req.body.email,
+				activationToken: req.body.activationToken
+			}
 		});
+
+		if (updated) {
+			res.status(200).json({
+				status: 'activated'
+			});
+		} else {
+			throw new HttpError(400, 'invalid_activation_token');
+		}
 	})
 );
 
@@ -138,6 +178,12 @@ users.post('/signin',
 		});
 
 		if (user && await user.verifyPassword(req.body.password)) {
+			if (!user.active) {
+				throw new HttpError(404, 'user_not_active', {
+					message: "Account is not activated, please check your inbox"
+				});
+			}
+
 			const access_token = signToken({
 				user_id: user.id
 			});
@@ -164,7 +210,7 @@ function storeAuthInfo(req, res, next) {
 	if (req.query.accessToken) {
 		req.session.accessToken = req.query.accessToken;
 	}
-	
+
 	req.session.referer = req.get('Referrer');
 	next();
 }

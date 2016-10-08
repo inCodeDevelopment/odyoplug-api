@@ -31,5 +31,12 @@
 	"beatFileStorage": {
 		"allowedMimeTypes": ["audio/mpeg", "audio/vnd.wave", "audio/mp3"],
 		"destination": "/tmp"
+	},
+	"mailer": {
+		"mailgun": {
+			"apiKey": "",
+			"domain": ""
+		},
+		"from": ""
 	}
 }

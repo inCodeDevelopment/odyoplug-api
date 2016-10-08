@@ -64,7 +64,8 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 
 			if (userByEmail) {
 				await userByEmail.update({
-					[profile.provider+'Id']: profile.id
+					[profile.provider+'Id']: profile.id,
+					active: true
 				});
 				return returnAccessToken(userByEmail)
 			}

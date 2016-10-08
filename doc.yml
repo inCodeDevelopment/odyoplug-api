@@ -75,6 +75,93 @@ paths:
                     examples:
                         application/json:
                             error: email_is_taken
+    /users/activate:
+        post:
+            tags: [user]
+            summary: Activate
+            operationId: userActvate
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required:
+                        - activationToken
+                        - email
+                    properties:
+                        activationToken:
+                            type: string
+                        email:
+                            type: string
+            responses:
+                '200':
+                    description: Activated
+                '400':
+                    description: Invalid token
+    /users/changePassword:
+        post:
+            tags: [user]
+            summary: Change password
+            operationId: userChangePassword
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required:
+                        - changePasswordToken
+                        - email
+                        - password
+                    properties:
+                        changePasswordToken:
+                            type: string
+                        email
+                            type: string
+                        password:
+                            type: string
+            responses:
+                '200':
+                    description: Password changed
+                '400':
+                    description: Invalid token
+    /users/requestActivationEmail:
+        post:
+            tags: [user]
+            summary: Request activation email
+            operationId: userRequestActivationEmail
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required: [login]
+                    properties:
+                        login:
+                            type: string
+            responses:
+                '200':
+                    description: Sent
+                '404':
+                    description: User not found
+    /users/requestPasswordRestoreEmail:
+        post:
+            tags: [user]
+            summary: Request password change email
+            operationId: userRequestPasswordChangeEmail
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    required: [login]
+                    properties:
+                        login:
+                            type: string
+            responses:
+                '200':
+                    description: Sent
+                '404':
+                    description: User not found
     /users/signin:
         post:
             tags: [user]

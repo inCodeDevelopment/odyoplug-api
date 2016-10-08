@@ -1,5 +1,5 @@
 import {verify} from 'token';
-import HttpError from 'HttpError';
+import { HttpError } from 'HttpError';
 
 export default async function(req, res, next) {
 	const authorizationToken = req.get('Authorization');

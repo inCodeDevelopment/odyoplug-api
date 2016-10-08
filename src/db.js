@@ -43,6 +43,13 @@ export const User = db.define('user', {
 		type: Sequelize.STRING,
 		unique: true,
 		allowNull: true
+	},
+	active: {
+		type: Sequelize.BOOLEAN,
+		defaultValue: true
+	},
+	activationToken: {
+		type: Sequelize.STRING
 	}
 }, {
 	timestamps: false,

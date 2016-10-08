@@ -31,6 +31,7 @@
     "mime-types": "^2.1.12",
     "multer": "^1.2.0",
     "node-ffprobe": "^1.2.2",
+    "node-uuid": "^1.4.7",
     "passport": "^0.3.2",
     "passport-facebook": "^2.1.1",
     "passport-google-oauth": "^1.0.0",

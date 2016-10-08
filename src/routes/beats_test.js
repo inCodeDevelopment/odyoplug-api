@@ -1,6 +1,7 @@
 import config from 'config';
 import supertest from 'supertest';
 import { clear as clearDb } from 'dbUtils';
+import { createAndActivateUser } from './testUtils';
 import app from 'app';
 import should from 'should';
 
@@ -12,15 +13,7 @@ describe('api /beats', function () {
 
   beforeEach(async function() {
     agent = supertest(app);
-
-    const signUpReponse = await agent.post('/api/users/signup')
-      .send({
-        email: 'test@gmail.com',
-        password: '123123123',
-        username: 'test'
-      });
-
-    accessToken = signUpReponse.body.access_token;
+    accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
   });
 
   describe('POST /files', function () {
