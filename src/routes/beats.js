@@ -82,6 +82,18 @@ beats.post('/',
   })
 );
 
+beats.get('/user/:userId',
+	wrap(async function(req, res) {
+		const beats = await Beat.findAll({
+			where: {
+				userId: req.params.userId
+			}
+		});
+
+		res.status(200).json({beats});
+	})
+);
+
 beats.post('/files',
   authorizedOnly,
   beatFileUploader.single('beatFile'),

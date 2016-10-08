@@ -291,6 +291,25 @@ paths:
                                 id: 4
                                 username: 'Foo Bar'
                                 email: fubar@gmail.com
+    /beats/user/{userId}:
+        get:
+           tags: [beat, user]
+           summary: Get user beats
+           operationId: userBeatsGet
+           parameters:
+              - in: path
+                name: userId
+                type: number
+           responses:
+              '200':
+                  description: Success
+                  schema:
+                      type: object
+                      properties:
+                          beats:
+                              type: array
+                              items:
+                                  $ref: '#/definitions/Beat'
     /genres:
         get:
             tags: [genre]

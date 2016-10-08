@@ -167,4 +167,32 @@ describe('api /beats', function () {
       })
     });
 	});
+
+  describe('GET /user/{userId}', function () {
+    let userId;
+
+    beforeEach(async function() {
+      for (let i=0 ; i<3 ; i++) {
+        const res = await agent.post('/api/beats')
+          .set('Authorization', accessToken)
+          .send({
+            name: "FooBar",
+            tempo: 145,
+            price: 3.99,
+            genreId: 13,
+            fileId: (await agent.post('/api/beats/files')
+              .set('Authorization', accessToken)
+              .attach('beatFile', 'src/assets_test/audio.mp3')
+              .send({})).body.file.id
+          });
+        userId = res.body.beat.userId;
+      }
+    })
+    it('should return list of user beats', async function() {
+      const getBeatsByUserResponse = await agent.get(`/api/beats/user/${userId}`);
+
+      getBeatsByUserResponse.statusCode.should.be.equal(200);
+      getBeatsByUserResponse.body.beats.length.should.be.equal(3);
+    });
+  });
 });
