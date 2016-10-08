@@ -3,6 +3,17 @@ import sinon from 'sinon';
 import app from 'app';
 import mailer from 'mailer';
 
+export async function createUser(email, username, password) {
+  const agent = supertest(app);
+  
+  await agent.post('/api/users/signup')
+    .send({
+      email: email,
+      password: password,
+      username: username
+    });
+}
+
 export async function createAndActivateUser(email, username, password) {
   const agent = supertest(app);
 
@@ -27,6 +38,6 @@ export async function createAndActivateUser(email, username, password) {
       login: email,
       password: password
     });
-  
+
   return signInResponse.body.access_token;
 }

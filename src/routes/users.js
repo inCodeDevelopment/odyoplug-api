@@ -121,6 +121,46 @@ users.post('/signup',
 	})
 );
 
+users.post('/requestActivationEmail',
+	validate({
+		body: {
+			login: {
+				notEmpty: true,
+				errorMessage: 'Invalid login'
+			}
+		}
+	}),
+	wrap(async function(req, res) {
+		const query = req.body.login.indexOf('@') === -1
+			? { username: req.body.login }
+			: { email: req.body.login };
+
+		const user = await User.findOne({
+			where: query
+		});
+
+		if (!user) {
+			throw new HttpError(404, 'user_not_found', {
+				message: 'User not found'
+			});
+		}
+
+		await user.update({
+			activationToken: uuid.v4()
+		});
+
+		const baseUrl = req.get('Referrer') || config.get('baseUrl');
+		await mailer.send('user-activation', user.email, {
+			url: `${baseUrl}/activate`,
+			activationToken: user.activationToken,
+			email: user.email,
+			username: user.username
+		});
+
+		res.status(200).json({status: 'sent'});
+	})
+);
+
 users.post('/activate',
 	validate({
 		body: {

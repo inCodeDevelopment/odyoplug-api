@@ -101,7 +101,7 @@ paths:
     /users/changePassword:
         post:
             tags: [user]
-            summary: Change password
+            summary: Change password by token
             operationId: userChangePassword
             parameters:
               - in: body
@@ -115,7 +115,7 @@ paths:
                     properties:
                         changePasswordToken:
                             type: string
-                        email
+                        email:
                             type: string
                         password:
                             type: string

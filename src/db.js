@@ -50,6 +50,9 @@ export const User = db.define('user', {
 	},
 	activationToken: {
 		type: Sequelize.STRING
+	},
+	passwordChangeToken: {
+		type: Sequelize.STRING
 	}
 }, {
 	timestamps: false,
@@ -73,6 +76,9 @@ export const User = db.define('user', {
 
 			// Delete private info
 			delete values.hash;
+			delete values.active;
+			delete values.activationToken;
+			delete values.passwordChangeToken;
 
 			return values;
 		}

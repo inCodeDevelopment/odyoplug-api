@@ -5,7 +5,7 @@ import app from 'app';
 import should from 'should';
 import sinon from 'sinon';
 import mailer from 'mailer';
-import { createAndActivateUser } from './testUtils';
+import { createAndActivateUser, createUser } from './testUtils';
 
 before(app.resolveWhenReady);
 beforeEach(clearDb);
@@ -124,7 +124,7 @@ describe('api /users', function () {
 			activationToken = mailer.send.firstCall.args[2].activationToken;
 
 			mailer.send.restore();
-		})
+		});
 
 		it('should activate account', async function() {
 			const agent = supertest(app);
@@ -143,6 +143,42 @@ describe('api /users', function () {
 			activateResponse.statusCode.should.be.equal(400);
 		});
 	})
+
+	describe('POST /requestActivationEmail', function () {
+		beforeEach('create user', async function() {
+			await createUser('test@gmail.com', 'test', '123123');
+		})
+		it('should send email', async function() {
+			const agent = supertest(app);
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+
+			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
+				.send({
+					login: 'test'
+				});
+
+			requestActivationEmailResponse.statusCode.should.be.equal(200);
+
+			mailer.send.should.be.calledWithMatch('user-activation', 'test@gmail.com');
+
+			mailer.send.restore();
+		});
+		it('should return 404 if user not exists', async function() {
+			const agent = supertest(app);
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+
+			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
+				.send({
+					login: 'teasdasdasfsafsst'
+				});
+
+			requestActivationEmailResponse.statusCode.should.be.equal(404);
+
+			mailer.send.should.not.be.calledWithMatch('user-activation');
+
+			mailer.send.restore();
+		});
+	});
 
 	describe('POST /signin', function () {
 		beforeEach('create user', async function () {
