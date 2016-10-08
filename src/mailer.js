@@ -1,5 +1,42 @@
-async function send(template, to, data) {
-  return;
+import mailgun from 'mailgun-js';
+import config from 'config';
+import fs from 'fs-promise';
+import _ from 'lodash';
+import DataLoader from 'dataloader';
+
+const templateLoader = new DataLoader(templates =>
+  Promise.map(templates, async templateName => ({
+    subject: _.template(
+      await fs.readFile(`./emailTemplates/${templateName}/subject`)
+    ),
+    text: _.template(
+      await fs.readFile(`./emailTemplates/${templateName}/template.text`)
+    ),
+    html: _.template(
+      await fs.readFile(`./emailTemplates/${templateName}/template.html`)
+    )
+  }))
+)
+
+let mailgunClient;
+if (config.mailer.mailgun.apiKey) {
+  mailgunClient = mailgun(config.mailer.mailgun);
+}
+
+async function send(templateName, to, data) {
+  if (!mailgunClient) {
+    return;
+  }
+
+  const template = await templateLoader.load(templateName);
+
+  await mailgunClient.messages().send({
+    from: config.mailer.from,
+    to: to,
+    subject: template.subject(data),
+    text: template.text(data),
+    html: template.html(data)
+  })
 };
 
 export default {

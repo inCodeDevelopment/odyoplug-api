@@ -1,0 +1,2 @@
+Hello <%- username %>
+Activation link: <%- url %>?activationToken=<%- activationToken %>&email=<%- email %>&username=<%- username %>

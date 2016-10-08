@@ -1,0 +1,2 @@
+Hello, <%- username %>
+Password restore link <%- url %>?passwordRestoreToken=<%- passwordRestoreToken %>&email=<%- email %>&username=<%- username %>
