@@ -66,9 +66,6 @@ export const User = db.define('user', {
 
 			// Delete private info
 			delete values.hash;
-			delete values.googleId;
-			delete values.twitterId;
-			delete values.facebookId;
 
 			return values;
 		}

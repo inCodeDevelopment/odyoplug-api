@@ -52,8 +52,11 @@ POST /api/users/signin
 
 В случае неудачной авторизации он будет перенаправлен на `$baseUrl/$socialAuth.callbackFailure`(по умолчанию `/social_auth_callback_failure.html`) c `error` в query params.
 
-В случае успешной авторизации пользователь будет перемещен на `$baseUrl/$socialAuth.callback`(по умолчанию `/social_auth_callback.html`). 
+В случае успешной авторизации пользователь будет перемещен на `$baseUrl/$socialAuth.callback`(по умолчанию `/social_auth_callback.html`).
 
 Если пользователь с привязкой к этому аккаунту найден то в `query.status` будет лежать `authorized`, а в `query.access_token` неопсредственно ключ для авторизации запросов на odyoplug.
 
 Если такой пользователь не найден, то он будет создан автоматически.
+
+# Добавление авторизации через социальную сеть к существующему аккаунту
+Для данного действия нужно произвести вызов аналогичный предыдущемо, но передать через query параметры access token в поле accessToken

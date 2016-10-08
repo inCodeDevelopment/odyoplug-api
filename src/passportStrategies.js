@@ -24,9 +24,21 @@ function verifyUser(req, accessToken, refreshToken, profile, done) {
 			const user = User.findById(userId);
 
 			if (user) {
-				await user.update({
-					[profile.provider+'Id']: profile.id
-				});
+				if (user[profile.provider+'Id']) {
+					throw new Error(`Another ${profile.provider} account already linked with this profile`);
+				}
+
+				try {
+					await user.update({
+						[profile.provider+'Id']: profile.id
+					});
+				} catch (err) {
+					if (err instanceof sequelize.UniqueContraintError) {
+						throw new Error(`This ${profile.provider} account already linked with another profile`);
+					}
+
+					throw err;
+				}
 				return returnAccessToken(user)
 			}
 		}
