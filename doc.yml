@@ -109,7 +109,7 @@ paths:
                 schema:
                     type: object
                     required:
-                        - changePasswordToken
+                        - passwordRestoreToken
                         - email
                         - password
                     properties:

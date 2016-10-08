@@ -56,6 +56,11 @@ export const User = db.define('user', {
 	}
 }, {
 	timestamps: false,
+	classMethods: {
+	  hashPassword(password) {
+			return bcrypt.hash(password, 8)
+		}
+	},
 	instanceMethods: {
 		async setPassword(password) {
 			this.set('hash', await bcrypt.hash(password, 8));

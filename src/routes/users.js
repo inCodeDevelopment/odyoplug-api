@@ -186,13 +186,13 @@ users.post('/requestPasswordRestoreEmail',
 		}
 
 		await user.update({
-			activationToken: uuid.v4()
+			passwordRestoreToken: uuid.v4()
 		});
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('restore-password', user.email, {
 			url: `${baseUrl}/restore-password`,
-			passwordRestoreToken: user.activationToken,
+			passwordRestoreToken: user.passwordRestoreToken,
 			email: user.email,
 			username: user.username
 		});
@@ -231,6 +231,45 @@ users.post('/activate',
 			});
 		} else {
 			throw new HttpError(400, 'invalid_activation_token');
+		}
+	})
+);
+
+users.post('/changePassword',
+	validate({
+		body: {
+			email: {
+				...schemas.email,
+				notEmpty: true
+			},
+			passwordRestoreToken: {
+				errorMessage: 'Invalid password restore token',
+				notEmpty: true
+			},
+			password: {
+				...schemas.password,
+				notEmpty: true
+			}
+		}
+	}),
+	wrap(async function(req, res) {
+		const [updated] = await User.update({
+			active: true,
+			passwordRestoreToken: null,
+			hash: await User.hashPassword(req.body.password)
+		},{
+			where: {
+				email: req.body.email,
+				passwordRestoreToken: req.body.passwordRestoreToken
+			}
+		});
+
+		if (updated) {
+			res.status(200).json({
+				status: 'updated'
+			});
+		} else {
+			throw new HttpError(400, 'invalid_password_restore_token');
 		}
 	})
 );

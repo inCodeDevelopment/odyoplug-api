@@ -216,6 +216,50 @@ describe('api /users', function () {
 		});
 	});
 
+	describe('POST /changePassword', function () {
+		let email = 'test@test.com';
+		let passwordRestoreToken;
+
+		beforeEach('create user', async function() {
+			const agent = supertest(app);
+
+			await agent.post('/api/users/signup')
+				.send({
+					email: email,
+					password: '123123123',
+					username: 'test'
+				});
+
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+
+			await agent.post('/api/users/requestPasswordRestoreEmail')
+				.send({
+					login: 'test'
+				});
+
+			passwordRestoreToken = mailer.send.firstCall.args[2].passwordRestoreToken;
+
+			mailer.send.restore();
+		});
+
+		it('should change password', async function() {
+			const agent = supertest(app);
+
+			const activateResponse = await agent.post('/api/users/changePassword')
+				.send({email, passwordRestoreToken, password: '123123123'});
+
+			activateResponse.statusCode.should.be.equal(200);
+		});
+		it('should reject invalid token', async function() {
+			const agent = supertest(app);
+
+			const activateResponse = await agent.post('/api/users/changePassword')
+				.send({email, passwordRestoreToken:'123', password: '123123123'});
+
+			activateResponse.statusCode.should.be.equal(400);
+		});
+	});
+
 	describe('POST /signin', function () {
 		beforeEach('create user', async function () {
 			await createAndActivateUser('test@gmail.com', 'test', '123123123')
