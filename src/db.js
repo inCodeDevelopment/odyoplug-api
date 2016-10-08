@@ -51,7 +51,7 @@ export const User = db.define('user', {
 	activationToken: {
 		type: Sequelize.STRING
 	},
-	passwordChangeToken: {
+	passwordRestoreToken: {
 		type: Sequelize.STRING
 	}
 }, {

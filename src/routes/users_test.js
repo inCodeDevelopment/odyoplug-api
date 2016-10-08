@@ -180,6 +180,42 @@ describe('api /users', function () {
 		});
 	});
 
+	describe('POST /requestPasswordRestoreEmail', function () {
+		beforeEach('create user', async function() {
+			await createUser('test@gmail.com', 'test', '123123');
+		})
+		it('should send email', async function() {
+			const agent = supertest(app);
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+
+			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
+				.send({
+					login: 'test'
+				});
+
+			requestPasswordRestoreEmailResponse.statusCode.should.be.equal(200);
+
+			mailer.send.should.be.calledWithMatch('restore-password', 'test@gmail.com');
+
+			mailer.send.restore();
+		});
+		it('should return 404 if user not exists', async function() {
+			const agent = supertest(app);
+			sinon.stub(mailer, 'send').returns(Promise.resolve());
+
+			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
+				.send({
+					login: 'teasdasdasfsafsst'
+				});
+
+			requestPasswordRestoreEmailResponse.statusCode.should.be.equal(404);
+
+			mailer.send.should.not.be.calledWithMatch('restore-password');
+
+			mailer.send.restore();
+		});
+	});
+
 	describe('POST /signin', function () {
 		beforeEach('create user', async function () {
 			await createAndActivateUser('test@gmail.com', 'test', '123123123')
