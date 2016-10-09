@@ -291,25 +291,6 @@ paths:
                                 id: 4
                                 username: 'Foo Bar'
                                 email: fubar@gmail.com
-    /beats/user/{userId}:
-        get:
-           tags: [beat, user]
-           summary: Get user beats
-           operationId: userBeatsGet
-           parameters:
-              - in: path
-                name: userId
-                type: number
-           responses:
-              '200':
-                  description: Success
-                  schema:
-                      type: object
-                      properties:
-                          beats:
-                              type: array
-                              items:
-                                  $ref: '#/definitions/Beat'
     /genres:
         get:
             tags: [genre]
@@ -325,6 +306,49 @@ paths:
                                 type: array
                                 items:
                                     $ref: '#/definitions/Genre'
+    /beats/user/{userId}:
+        get:
+           tags: [beat, user]
+           summary: Get user beats
+           operationId: userBeatsGet
+           parameters:
+              - in: path
+                name: userId
+                type: number
+                required: true
+           responses:
+              '200':
+                  description: Success
+                  schema:
+                      type: object
+                      properties:
+                          beats:
+                              type: array
+                              items:
+                                  $ref: '#/definitions/Beat'
+    /beats/search:
+        get:
+            tags: [beat]
+            summary: Search beats
+            operationId: beatsSearch
+            parameters:
+                - in: query
+                  name: q
+                  type: string
+                  required: true
+                - in: query
+                  name: genreId
+                  type: number
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            beats:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/Beat'
     /beats/files:
         post:
             tags: [beat]

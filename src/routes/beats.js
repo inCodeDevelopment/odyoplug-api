@@ -100,6 +100,72 @@ beats.get('/user/:userId',
 	})
 );
 
+beats.get('/search',
+	validate({
+		query: {
+			q: {
+				errorMessage: 'Invalid query'
+			},
+			genreId: {
+				isInt: {
+					options: []
+				},
+				errorMessage: 'Invalid genre'
+			}
+		}
+	}),
+	wrap(async function(req, res) {
+		const query = {
+			name: {
+				$iLike: `%${req.query.q}%`
+			}
+		};
+
+		if (req.query.genreId) {
+			query.genreId = req.query.genreId;
+		}
+
+		const freshBeats = await Beat.findAll({
+			where: {
+				...query,
+				createdAt: {
+					$gte: new Date(new Date() - config.get('search.fresh.days') * 24 * 60 * 60 * 1000)
+				}
+			},
+			include: [
+				{
+					model: BeatFile,
+					as: 'file'
+				}
+			],
+			order: [
+				['createdAt', 'DESC']
+			],
+			limit: config.get('search.fresh.limit')
+		});
+
+		const beats = await Beat.findAll({
+			where: {
+				...query,
+				id: {
+					$notIn: freshBeats.map(beat => beat.id)
+				}
+			},
+			include: [
+				{
+					model: BeatFile,
+					as: 'file'
+				}
+			],
+			order: [
+				['createdAt', 'DESC']
+			]
+		});
+
+		res.status(200).json({freshBeats, beats});
+	})
+);
+
 beats.post('/files',
   authorizedOnly,
   beatFileUploader.single('beatFile'),

@@ -196,4 +196,49 @@ describe('api /beats', function () {
       getBeatsByUserResponse.body.beats[0].should.have.property('file');
     });
   });
+
+  describe('GET /search', function () {
+    beforeEach(async function() {
+      const beats = [
+        {name: 'Foo Bar', genreId: 2},
+        {name: 'Hello World', genreId: 2},
+        {name: 'Hello test', genreId: 3},
+        {name: 'Bar Baz', genreId: 3},
+        {name: 'Bye World', genreId: 3}
+      ];
+
+      for (let beat of beats) {
+        await agent.post('/api/beats')
+          .set('Authorization', accessToken)
+          .send({
+            ...beat,
+            tempo: 145,
+            price: 3.99,
+            fileId: (await agent.post('/api/beats/files')
+              .set('Authorization', accessToken)
+              .attach('beatFile', 'src/assets_test/audio.mp3')
+              .send({})).body.file.id
+          });
+      }
+    })
+    it('should filter beats by query', async function() {
+      const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world`);
+
+      getBeatsByUserResponse.statusCode.should.be.equal(200);
+      getBeatsByUserResponse.body.freshBeats.length.should.be.equal(2);
+      getBeatsByUserResponse.body.freshBeats[0].should.have.property('file');
+    });
+    it('should filter beats by query and genreId', async function() {
+      const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world&genreId=3`);
+
+      getBeatsByUserResponse.statusCode.should.be.equal(200);
+      getBeatsByUserResponse.body.freshBeats.length.should.be.equal(1);
+      getBeatsByUserResponse.body.freshBeats[0].should.have.property('file');
+    });
+    it('should include both fresh and other beats', async function() {
+      const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world`);
+      getBeatsByUserResponse.body.should.have.property('freshBeats');
+      getBeatsByUserResponse.body.should.have.property('beats');
+    });
+  });
 });

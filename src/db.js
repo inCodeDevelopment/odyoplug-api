@@ -130,7 +130,14 @@ export const Beat = db.define('beat', {
 		unique: true
 	}
 }, {
-	timestamps: true
+	timestamps: true,
+	indexes: [
+		{
+			method: 'GIST',
+			fields: ['name'],
+			operator: 'gist_trgm_ops'
+		}
+	]
 });
 
 Beat.belongsTo(Genre);

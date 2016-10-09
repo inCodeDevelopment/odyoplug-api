@@ -38,5 +38,11 @@
 			"domain": ""
 		},
 		"from": ""
+	},
+	"search": {
+		"fresh": {
+			"limit": 10,
+			"days": 7
+		}
 	}
 }
