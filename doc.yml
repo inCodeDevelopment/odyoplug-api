@@ -345,6 +345,10 @@ paths:
                     schema:
                         type: object
                         properties:
+                            freshBeats:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/Beat'
                             beats:
                                 type: array
                                 items:
