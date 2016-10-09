@@ -2,8 +2,8 @@ import db from 'db';
 import createFixtures from 'fixtures';
 import { createSequences, createExtensions } from 'dbUtils';
 
-db.sync()
-	.then(createExtensions)
+createExtensions()
+	.then(() => db.sync())
 	.then(createSequences)
 	.then(createFixtures)
 	.then(() => {
