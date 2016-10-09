@@ -1,10 +1,11 @@
 import db from 'db';
 import createFixtures from 'fixtures';
-import { createSequences } from 'dbUtils';
+import { createSequences, createExtensions } from 'dbUtils';
 
 db.sync()
-	.then(() => createSequences())
-	.then(() => createFixtures())
+	.then(createExtensions)
+	.then(createSequences)
+	.then(createFixtures)
 	.then(() => {
 		console.log('DB bootstraped');
 	})

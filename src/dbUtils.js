@@ -1,6 +1,16 @@
 import db from 'db';
 import createFixtures from 'fixtures';
 
+export async function createExtensions() {
+	await db.query(`
+		CREATE EXTENSION IF NOT EXISTS citext;
+	`);
+
+	await db.query(`
+		CREATE EXTENSION IF NOT EXISTS pg_trgm;
+	`);
+}
+
 export async function createSequences() {
 	await db.query(`
 		CREATE SEQUENCE public.users_social_id_seq
@@ -14,6 +24,8 @@ export async function createSequences() {
 }
 
 export async function clear() {
+	await createExtensions();
+
 	await db.sync({
 		match: /test$/,
 		force: true
