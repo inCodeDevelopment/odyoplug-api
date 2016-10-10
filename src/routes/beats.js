@@ -107,6 +107,7 @@ beats.get('/search',
 				errorMessage: 'Invalid query'
 			},
 			genreId: {
+				optional: true,
 				isInt: {
 					options: []
 				},

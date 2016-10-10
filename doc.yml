@@ -18,6 +18,8 @@ tags:
     description: Beat operations
   - name: genre
     description: Genre operations
+  - name: cart
+    description: Shopping cart operations
 
 securityDefinitions:
     access_token:
@@ -415,8 +417,100 @@ paths:
                         properties:
                             beat:
                                 $ref: '#/definitions/Beat'
-
+    /cart/guest:
+        post:
+            tags: [cart]
+            summary: Create guest cart
+            operationId: cartGuestCreate
+            responses:
+                '200':
+                    description: Created
+                    schema:
+                        type: object
+                        properties:
+                            cartId:
+                                type: string
+    /cart/{cartId}:
+        get:
+            tags: [cart]
+            summary: Get cart items
+            operationId: cartGet
+            description: Use `my` as cartId in case Authorization header provided
+            responses:
+                '200':
+                    $ref: '#/responses/Cart'
+    /cart/my/import:
+        post:
+            tags: [cart]
+            summary: Import guest cart
+            operationId: cartImport
+            parameters:
+                - in: body
+                  name: body
+                  schema:
+                      type: object
+                      required: [cartId]
+                      properties:
+                          cartId:
+                              type: string
+            responses:
+                '200':
+                    $ref: '#/responses/Cart'
+    /cart/{cartId}/addBeat:
+        post:
+            tags: [cart]
+            summary: Add beat to cart
+            operationId: cartAddBeat
+            parameters:
+                - in: body
+                  name: body
+                  schema:
+                      type: object
+                      required: [beatId]
+                      properties:
+                          beatId:
+                              type: number
+            responses:
+                '200':
+                    $ref: '#/responses/Cart'
+    /cart/{cartId}/removeBeat:
+        post:
+            tags: [cart]
+            summary: Remove beat from cart
+            operationId: cartRemoveBeat
+            parameters:
+                - in: body
+                  name: body
+                  schema:
+                      type: object
+                      required: [beatId]
+                      properties:
+                          beatId:
+                              type: number
+            responses:
+                '200':
+                    $ref: '#/responses/Cart'
+    /cart/{cartId}/clear:
+        post:
+            tags: [cart]
+            summary: Remove all items from cart
+            operationId: cartClear
+            responses:
+                '200':
+                    $ref: '#/responses/Cart'
 responses:
+    Cart:
+        description: Success
+        schema:
+            type: object
+            properties:
+                cart:
+                    type: object
+                    properties:
+                        beats:
+                            type: array
+                            beats:
+                                $ref: '#/definitions/Beat'
     NotFound:
         description: Entity not found
         schema:

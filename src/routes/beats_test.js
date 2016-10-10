@@ -5,14 +5,15 @@ import { createAndActivateUser } from './testUtils';
 import app from 'app';
 import should from 'should';
 
+const agent = supertest(app);
+
 before(app.resolveWhenReady);
 beforeEach(clearDb);
 
 describe('api /beats', function () {
-  let agent, accessToken;
+  let accessToken;
 
   beforeEach(async function() {
-    agent = supertest(app);
     accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
   });
 

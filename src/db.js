@@ -152,4 +152,36 @@ Beat.belongsTo(BeatFile, {
 	as: 'file'
 });
 
+export const CartItem = db.define('cartItem', {
+	cartId: {
+		type: Sequelize.STRING,
+		allowNull: true
+	}
+}, {
+	indexes: [
+		{
+			fields: ['userId', 'beatId'],
+			unique: true,
+			where: {
+				cartId: null
+			}
+		},
+		{
+			fields: ['cartId', 'beatId'],
+			unique: true,
+			where: {
+				userId: null
+			}
+		}
+	]
+});
+
+CartItem.belongsTo(Beat, {
+	onDelete: 'CASCADE'
+});
+
+CartItem.belongsTo(User, {
+	onDelete: 'CASCADE'
+});
+
 export const ready = db.authenticate();

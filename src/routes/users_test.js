@@ -7,14 +7,14 @@ import sinon from 'sinon';
 import mailer from 'mailer';
 import { createAndActivateUser, createUser } from './testUtils';
 
+const agent = supertest(app);
+
 before(app.resolveWhenReady);
 beforeEach(clearDb);
 
 describe('api /users', function () {
 	describe('POST /signup', function () {
 		it('should create user and return it', async function () {
-			const agent = supertest(app);
-
 			const createUserResponse = await agent.post('/api/users/signup')
 				.send({
 					email: 'test@gmail.com',
@@ -31,7 +31,6 @@ describe('api /users', function () {
 
 		it('should send activation email', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
-			const agent = supertest(app);
 
 			const createUserResponse = await agent.post('/api/users/signup')
 				.send({
@@ -46,8 +45,6 @@ describe('api /users', function () {
 		});
 
 		it('should return error on username conflict', async function () {
-			const agent = supertest(app);
-
 			await agent.post('/api/users/signup')
 				.send({
 					email: 'test@gmail.com',
@@ -76,8 +73,6 @@ describe('api /users', function () {
 		});
 
 		it('should return error on email conflict', async function () {
-			const agent = supertest(app);
-
 			await agent.post('/api/users/signup')
 				.send({
 					email: 'test@gmail.com',
@@ -111,7 +106,6 @@ describe('api /users', function () {
 		let activationToken;
 
 		beforeEach('create user', async function() {
-			const agent = supertest(app);
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			await agent.post('/api/users/signup')
@@ -127,16 +121,12 @@ describe('api /users', function () {
 		});
 
 		it('should activate account', async function() {
-			const agent = supertest(app);
-
 			const activateResponse = await agent.post('/api/users/activate')
 				.send({email, activationToken});
 
 			activateResponse.statusCode.should.be.equal(200);
 		});
 		it('should reject invalid token', async function() {
-			const agent = supertest(app);
-
 			const activateResponse = await agent.post('/api/users/activate')
 				.send({email, activationToken:'123'});
 
@@ -149,7 +139,6 @@ describe('api /users', function () {
 			await createUser('test@gmail.com', 'test', '123123');
 		})
 		it('should send email', async function() {
-			const agent = supertest(app);
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
@@ -164,7 +153,6 @@ describe('api /users', function () {
 			mailer.send.restore();
 		});
 		it('should return 404 if user not exists', async function() {
-			const agent = supertest(app);
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
@@ -185,7 +173,6 @@ describe('api /users', function () {
 			await createUser('test@gmail.com', 'test', '123123');
 		})
 		it('should send email', async function() {
-			const agent = supertest(app);
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
@@ -200,7 +187,6 @@ describe('api /users', function () {
 			mailer.send.restore();
 		});
 		it('should return 404 if user not exists', async function() {
-			const agent = supertest(app);
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
@@ -221,8 +207,6 @@ describe('api /users', function () {
 		let passwordRestoreToken;
 
 		beforeEach('create user', async function() {
-			const agent = supertest(app);
-
 			await agent.post('/api/users/signup')
 				.send({
 					email: email,
@@ -243,16 +227,12 @@ describe('api /users', function () {
 		});
 
 		it('should change password', async function() {
-			const agent = supertest(app);
-
 			const activateResponse = await agent.post('/api/users/changePassword')
 				.send({email, passwordRestoreToken, password: '123123123'});
 
 			activateResponse.statusCode.should.be.equal(200);
 		});
 		it('should reject invalid token', async function() {
-			const agent = supertest(app);
-
 			const activateResponse = await agent.post('/api/users/changePassword')
 				.send({email, passwordRestoreToken:'123', password: '123123123'});
 
@@ -266,8 +246,6 @@ describe('api /users', function () {
 		});
 
 		it('should return Access-Token', async function () {
-			const agent = supertest(app);
-
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
 					login: 'test@gmail.com',
@@ -283,8 +261,6 @@ describe('api /users', function () {
 		});
 
 		it('should let signin with email in other case', async function () {
-			const agent = supertest(app);
-
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
 					login: 'TeST@gmail.COM',
@@ -300,8 +276,6 @@ describe('api /users', function () {
 		});
 
 		it('should return error when password is wrong', async function () {
-			const agent = supertest(app);
-
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
 					login: 'test@gmail.com',
@@ -316,8 +290,6 @@ describe('api /users', function () {
 		});
 
 		it('should return error when user not found', async function () {
-			const agent = supertest(app);
-
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
 					login: 'fubar@test.com',
@@ -338,8 +310,6 @@ describe('api /users', function () {
 		});
 
 		it('should return user', async function () {
-			const agent = supertest(app);
-
 			const signInResponse = await agent.post('/api/users/signin')
 				.send({
 					login: 'test@gmail.com',
@@ -358,10 +328,9 @@ describe('api /users', function () {
 	});
 
 	describe('POST /me', function () {
-		let agent, accessToken;
+		let accessToken;
 
 		beforeEach('create user', async function () {
-			agent = supertest(app);
 			await createAndActivateUser('test@gmail.com', 'test', '123123123')
 
 			const signInResponse = await agent.post('/api/users/signin')

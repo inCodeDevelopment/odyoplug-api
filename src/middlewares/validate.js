@@ -7,6 +7,14 @@ function validate(schemas) {
 				req.checkBody(schemas.body);
 			}
 
+			if (schemas.query) {
+				req.checkQuery(schemas.query);
+			}
+
+			if (schemas.params) {
+				req.checkParams(schemas.params);
+			}
+
 			const errors = req.validationErrors(true);
 
 			if (errors) {
