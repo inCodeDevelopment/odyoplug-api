@@ -17,10 +17,8 @@ var whitelist = config.get('corsWhitelist');
 
 app.use(
   cors({
-    origin: function(origin, callback){
-      const originIsWhitelisted = whitelist.includes(origin);
-      callback(originIsWhitelisted ? null : 'Bad Request', originIsWhitelisted);
-    }
+    origin: whitelist,
+    credentials: true
   })
 );
 app.use(bodyParser.json());
