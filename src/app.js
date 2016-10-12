@@ -7,6 +7,7 @@ import expressValidator from 'express-validator';
 import { ready as dbReady } from 'db';
 import initPassportStrategies from 'passportStrategies';
 import cors from 'cors';
+import config from 'config';
 
 initPassportStrategies();
 
