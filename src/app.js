@@ -12,7 +12,16 @@ initPassportStrategies();
 
 const app = express();
 
-app.use(cors());
+var whitelist = config.get('corsWhitelist');
+
+app.use(
+  cors({
+    origin: function(origin, callback){
+      const originIsWhitelisted = whitelist.includes(origin);
+      callback(originIsWhitelisted ? null : 'Bad Request', originIsWhitelisted);
+    }
+  })
+);
 app.use(bodyParser.json());
 app.use(expressValidator());
 

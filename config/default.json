@@ -44,5 +44,6 @@
 			"limit": 10,
 			"days": 7
 		}
-	}
+	},
+	"cortWhitelist": ["http://odyoplug.local", "http://odyoplug.demo.incode-systems.com", "http://odyoplug.local:8080"]
 }
