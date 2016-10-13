@@ -3,8 +3,11 @@ import sequelize from 'sequelize';
 import { validate, authorizedOnly } from 'middlewares';
 import uuid from 'node-uuid';
 import {wrap} from './utils';
-import { CartItem, Beat, BeatFile } from 'db';
+import { CartItem, Beat, BeatFile, Transaction } from 'db';
 import _ from 'lodash';
+import url from 'url';
+import ipn from 'paypal-ipn';
+
 const cart = Router();
 
 const returnCart = wrap(async function (req, res) {
@@ -38,6 +41,10 @@ cart.post('/guest', function (req, res) {
 
 cart.use('/:id',
   (req, res, next) => {
+    if (['ipn', 'status', 'callback'].includes(req.params.id)) {
+      return next();
+    }
+
     if (req.params.id !== 'my') {
       validate({
         params: {
@@ -161,6 +168,153 @@ cart.post('/:id/clear',
     });
   }),
   returnCart
+);
+
+cart.get('/my/paypalBuyNowButton',
+  wrap(async function (req, res) {
+    const beats = await CartItem.findAll({
+      where: req.cart,
+      include: [
+        {
+          model: Beat,
+          include: [
+            {
+              model: BeatFile,
+              as: 'file'
+            }
+          ]
+        }
+      ]
+    }).map(_.property('beat'));
+
+    const items = {};
+    for (let i=0; i<beats.length ; i++) {d
+      items[`item_name_${i+1}`] = beat.name;
+      items[`amount_${i+1}`] = beat.price;
+      items[`item_number_${i+1}`] = beat.id;
+    }
+
+    const tx = uuid.v4();
+
+    let custom = JSON.stringify({
+      user: req.user_id,
+      tx: tx
+    });
+
+    let baseUrl;
+    if (config.get('socialAuth.resolveCallbackFromReferer')) {
+      baseUrl = req.get('Referer')
+    } else {
+      baseUrl = config.get('baseUrl');
+    }
+
+    res.status(200).json({
+      tx: tx,
+      action: config.get('paypal.mode') === 'sandbox'
+        ? 'https://www.sandbox.paypal.com/cgi-bin/webscr'
+        : 'https://www.paypal.com/cgi-bin/webscr',
+      data: {
+        cmd: '_cart',
+        upload: '1',
+        business: config.get('paypal.receiver'),
+        no_shipping: '1',
+        return: url.resolve(config.get('baseUrl'), '/paypal_beats_callback'),
+        notify_url: config.get('baseUrl') + '/api/cart/ipn',
+        custom: custom,
+        currency_code: 'USD',
+        ...items
+      }
+    })
+  })
+);
+
+cart.get('/status',
+  wrap(async function(req, res) {
+    const tx = await Transaction.findById(req.query.tx);
+
+    if (!tx) {
+      res.status(200).json({
+        status: 'wait'
+      });
+    } else {
+      res.status(200).json({
+        status: tx.status
+      });
+    }
+  })
+);
+
+cart.post('/ipn',
+  (req, res, next) => {
+    ipn.verify(req.body, {
+      allow_sandbox: config.get('paypal.mode') === 'sandbox'
+    }, next);
+  },
+  wrap(async function(req, res) {
+    if (req.body.payment_status !== 'Completed') {
+      res.status(200).send();
+      return;
+    }
+
+    const custom = JSON.parse(req.body.custom);
+
+    if (!custom.tx) {
+      res.status(500).send();
+      return;
+    }
+
+    const user = await User.findById(custom.user);
+
+    if (!user) {
+      await Transaction.create({
+        id: custom.tx,
+        status: 'fail'
+      });
+      res.status(500).send();
+      return;
+    }
+
+    // if this transaction handled already
+    if (await Transaction.findById(custom.tx)) {
+      res.status(200).send();
+      return;
+    }
+
+    let i=0;
+    let beats = [];
+    let amount;
+    while (req.body[`item_number_${i+1}`]) {
+      const beat = await Beat.findById(req.body[`item_number_${i+1}`]);
+      beats.push(beat);
+      amount += beat.price;
+    }
+
+    if (req.body.mc_gross !== amount || req.body.mc_currency !== 'USD') {
+      await Transaction.create({
+        id: custom.tx,
+        status: 'success'
+      });
+      res.status(500).send();
+      return;
+    }
+
+    // @TODO save relation between user and bought beat
+    await CartItem.destroy({
+      where: {
+        userId: custom.user,
+        beatId: {
+          $in: beats.map(_.property('id'))
+        }
+      }
+    });
+
+    await Transaction.create({
+      id: custom.tx,
+      status: 'success'
+    });
+
+    res.status(200).send()
+  })
 );
 
 export default cart;

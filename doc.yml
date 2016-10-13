@@ -20,6 +20,8 @@ tags:
     description: Genre operations
   - name: cart
     description: Shopping cart operations
+  - name: payment
+    description: Payment operations
 
 securityDefinitions:
     access_token:
@@ -498,6 +500,17 @@ paths:
             responses:
                 '200':
                     $ref: '#/responses/Cart'
+    /cart/my/paypalBuyNowButton:
+        get:
+            tags: [cart, payment]
+            summary: Get paypal buy now button parameters
+            operationId: cartPaypalBuyNowButton
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+
 responses:
     Cart:
         description: Success

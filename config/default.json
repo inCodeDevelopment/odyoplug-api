@@ -39,6 +39,10 @@
 		},
 		"from": ""
 	},
+	"paypal": {
+		"mode": "sandbox",
+		"receiver": "artemie.smirnov+merchant@gmail.com"
+	},
 	"search": {
 		"fresh": {
 			"limit": 10,

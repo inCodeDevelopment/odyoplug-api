@@ -184,4 +184,13 @@ CartItem.belongsTo(User, {
 	onDelete: 'CASCADE'
 });
 
+export const Transaction = db.define('transaction', {
+	id: {
+		type: Sequelize.STRING
+	},
+	status: {
+		type: Sequelize.ENUM('success', 'fail')
+	}
+});
+
 export const ready = db.authenticate();
