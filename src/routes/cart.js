@@ -251,7 +251,6 @@ cart.post('/ipn',
     }, next);
   },
   wrap(async function(req, res) {
-	console.log(req.body)
     if (req.body.payment_status !== 'Completed') {
       res.status(200).send();
       return;
