@@ -426,6 +426,46 @@ paths:
                         properties:
                             beat:
                                 $ref: '#/definitions/Beat'
+    /beats/{beatId}:
+        post:
+            tags: [beat]
+            summary: Update beat
+            operationId: beatsUpdate
+            security:
+               - accessToken: []
+            parameters:
+              - in: path
+                name: beatId
+                type: number
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        name:
+                            type: string
+                        tempo:
+                            type: number
+                        price:
+                            type: number
+                        genreId:
+                            type: number
+                        fileId:
+                            type: number
+                    example:
+                        name: FooBar
+                        tempo: 145
+                        price: 3.99
+                        genreId: 13
+                        fileId: 42
+            responses:
+                '200':
+                    description: Updated
+                    schema:
+                        type: object
+                        properties:
+                            beat:
+                                $ref: '#/definitions/Beat'
     /cart/guest:
         post:
             tags: [cart]

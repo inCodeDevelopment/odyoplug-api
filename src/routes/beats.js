@@ -14,71 +14,96 @@ import { HttpError } from 'HttpError';
 
 import { wrap } from './utils';
 
+const inputBeatSchema = {
+	name: {
+		errorMessage: 'Invalid beat name'
+	},
+	tempo: {
+		errorMessage: 'Invalid tempo'
+	},
+	genreId: {
+		errorMessage: 'Invalid genre'
+	},
+	fileId: {
+		errorMessage: 'Invalid fileId'
+	},
+	price: {
+		errorMessage: 'Invalid price'
+	}
+};
+
+function catchBeatError(err) {
+	if (err instanceof sequelize.ForeignKeyConstraintError) {
+		const fKey = err.original.constraint.split('_')[1];
+
+		throw new HttpError(400, 'invalid_input', {
+			errors: {
+				[fKey]: {
+					msg: `Invalid ${fKey}`
+				}
+			}
+		});
+	}
+
+	if (err instanceof sequelize.UniqueConstraintError &&
+		_.some(err.errors, _.matches({
+			type: 'unique violation',
+			path: 'fileId'
+		}))
+	) {
+		throw new HttpError(400, 'invalid_input', {
+			errors: {
+				fileId: {
+					msg: 'This file already in use'
+				}
+			}
+		});
+	}
+
+	throw err;
+}
+
 const beats = Router();
 
 beats.post('/',
   authorizedOnly,
   validate({
     body: {
-      name: {
-        errorMessage: 'Invalid beat name'
-      },
-      tempo: {
-        errorMessage: 'Invalid tempo'
-      },
-      genreId: {
-        errorMessage: 'Invalid genre'
-      },
-      fileId: {
-        errorMessage: 'Invalid fileId'
-      },
-      price: {
-        errorMessage: 'Invalid price'
-      }
-    }
+			...inputBeatSchema,
+			name: {
+				...inputBeatSchema.name,
+				notEmpty: true
+			},
+			tempo: {
+				...inputBeatSchema.tempo,
+				notEmpty: true
+			},
+			genreId: {
+				...inputBeatSchema.genreId,
+				notEmpty: true
+			},
+			fileId: {
+				...inputBeatSchema.fileId,
+				notEmpty: true
+			},
+			price: {
+				...inputBeatSchema.price,
+				notEmpty: true
+			}
+		}
   }),
   wrap(async function(req, res) {
-		try {
-	    const beat = await Beat.create({
-	      ...req.body,
-	      userId: req.user_id
-	    });
-	    res.send({
-	  		beat: {
-					...beat.toJSON(),
-					file: await beat.getFile()
-				}
-	    });
-		} catch (err) {
-			if (err instanceof sequelize.ForeignKeyConstraintError) {
-				const fKey = err.original.constraint.split('_')[1];
+    const beat = await Beat.create({
+      ...req.body,
+      userId: req.user_id
+    }).catch(catchBeatError);
 
-				throw new HttpError(400, 'invalid_input', {
-					errors: {
-						[fKey]: {
-							msg: `Invalid ${fKey}`
-						}
-					}
-				});
+    res.send({
+  		beat: {
+				...beat.toJSON(),
+				file: await beat.getFile()
 			}
-
-			if (err instanceof sequelize.UniqueConstraintError &&
-				_.some(err.errors, _.matches({
-					type: 'unique violation',
-					path: 'fileId'
-				}))
-			) {
-				throw new HttpError(400, 'invalid_input', {
-					errors: {
-						fileId: {
-							msg: 'This file already in use'
-						}
-					}
-				});
-			}
-
-			throw err;
-		}
+    });
   })
 );
 
@@ -181,6 +206,36 @@ beats.post('/files',
       file: beatFile
     })
   })
+);
+
+beats.post('/:id(\\d+)',
+	authorizedOnly,
+	validate({
+		body: inputBeatSchema
+	}),
+	wrap(async function(req, res) {
+		const [updated] = await Beat.update(req.body, {
+			where: {
+				userId: req.user_id,
+				id: req.params.id
+			}
+		}).catch(catchBeatError);
+
+		if (updated) {
+			const beat = await Beat.findById(req.params.id, {
+				include: [
+					{
+						model: BeatFile,
+						as: 'file'
+					}
+				]
+			})
+
+			res.status(200).json({beat});
+		} else {
+			throw new HttpError(403, 'access_denied');
+		}
+	})
 );
 
 export default beats;

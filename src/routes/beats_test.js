@@ -169,6 +169,52 @@ describe('api /beats', function () {
     });
 	});
 
+  describe('POST /:beatId', function () {
+    let beatId, accessToken2;
+
+    beforeEach(async function() {
+      accessToken2 = await createAndActivateUser('test1@gmail.com', 'test1', '123123');
+      const uploadBeatFileResponse = await agent.post('/api/beats/files')
+        .set('Authorization', accessToken)
+        .attach('beatFile', 'src/assets_test/audio.mp3')
+        .send({});
+
+      const fileId = uploadBeatFileResponse.body.file.id;
+
+      const createBeatResponse = await agent.post('/api/beats')
+        .set('Authorization', accessToken)
+        .send({
+          name: "FooBar",
+          tempo: 145,
+          price: 3.99,
+          genreId: 13,
+          fileId: fileId
+        });
+
+      beatId = createBeatResponse.body.beat.id;
+    });
+
+    it('should update beat', async function() {
+      const updateBeatResponse = await agent.post(`/api/beats/${beatId}`)
+        .set('Authorization', accessToken)
+        .send({
+          name: "Test"
+        });
+
+      updateBeatResponse.statusCode.should.be.equal(200);
+      updateBeatResponse.body.beat.name.should.be.equal("Test");
+    });
+    it('should return 403 on attempt to update others beat', async function() {
+      const updateBeatResponse = await agent.post(`/api/beats/${beatId}`)
+        .set('Authorization', accessToken2)
+        .send({
+          name: "Test"
+        });
+
+      updateBeatResponse.statusCode.should.be.equal(403);
+    });
+  });
+
   describe('GET /user/{userId}', function () {
     let userId;
 
