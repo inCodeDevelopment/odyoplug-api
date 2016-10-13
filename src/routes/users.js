@@ -205,7 +205,7 @@ users.post('/requestPasswordRestoreEmail',
 		});
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
-		await mailer.send('restore-password', user.email, {n
+		await mailer.send('restore-password', user.email, {
 			url: url.resolve(baseUrl, '/auth/forgot/password'),
 			passwordRestoreToken: passwordRestoreToken,
 			email: user.email,
