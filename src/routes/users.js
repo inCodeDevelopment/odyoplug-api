@@ -151,14 +151,16 @@ users.post('/requestActivationEmail',
 			});
 		}
 
+		const activationToken = uuid.v4();
+
 		await user.update({
-			activationToken: uuid.v4()
+			activationToken: activationToken
 		});
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('user-activation', user.email, {
 			url: `${baseUrl}/activate`,
-			activationToken: user.activationToken,
+			activationToken: activationToken,
 			email: user.email,
 			username: user.username
 		});
@@ -197,14 +199,15 @@ users.post('/requestPasswordRestoreEmail',
 			});
 		}
 
+		const passwordRestoreToken = uuid.v4();
 		await user.update({
-			passwordRestoreToken: uuid.v4()
+			passwordRestoreToken: passwordRestoreToken
 		});
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('restore-password', user.email, {
 			url: `${baseUrl}/restore-password`,
-			passwordRestoreToken: user.passwordRestoreToken,
+			passwordRestoreToken: passwordRestoreToken,
 			email: user.email,
 			username: user.username
 		});
