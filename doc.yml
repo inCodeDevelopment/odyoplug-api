@@ -510,7 +510,32 @@ paths:
                     description: Success
                     schema:
                         type: object
-
+                        properties:
+                            tx:
+                                type: string
+                            action:
+                                type: string
+                            data:
+                                type: object
+    /cart/my/status:
+        get:
+            tags: [cart, payment]
+            summary: Get payment status for beats cart
+            operationId: cartGetPaymentStatus
+            parameters:
+                - in: query
+                  name: tx
+                  type: string
+                  required: true
+            responses:
+                '200':
+                    description: Status
+                    schema:
+                        type: object
+                        properties:
+                            status:
+                                type: string
+                                enum: [wait, fail, success]
 responses:
     Cart:
         description: Success
@@ -611,8 +636,6 @@ definitions:
                         format: uri
                     duration:
                         type: number
-
-
     Genre:
         type: object
         required:
