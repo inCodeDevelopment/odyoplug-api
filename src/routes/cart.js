@@ -3,10 +3,11 @@ import sequelize from 'sequelize';
 import { validate, authorizedOnly } from 'middlewares';
 import uuid from 'node-uuid';
 import {wrap} from './utils';
-import { CartItem, Beat, BeatFile, Transaction } from 'db';
+import { CartItem, Beat, BeatFile, Transaction, User } from 'db';
 import _ from 'lodash';
 import url from 'url';
 import ipn from 'paypal-ipn';
+import config from 'config';
 
 const cart = Router();
 
@@ -228,10 +229,9 @@ cart.get('/my/paypalBuyNowButton',
   })
 );
 
-cart.get('/status',
+cart.get('/my/status',
   wrap(async function(req, res) {
     const tx = await Transaction.findById(req.query.tx);
-
     if (!tx) {
       res.status(200).json({
         status: 'wait'
@@ -251,6 +251,7 @@ cart.post('/ipn',
     }, next);
   },
   wrap(async function(req, res) {
+	console.log(req.body)
     if (req.body.payment_status !== 'Completed') {
       res.status(200).send();
       return;
@@ -289,7 +290,7 @@ cart.post('/ipn',
       amount += beat.price;
     }
 
-    if (req.body.mc_gross !== amount || req.body.mc_currency !== 'USD') {
+    if (parseFloat(req.body.mc_gross) !== amount || req.body.mc_currency !== 'USD') {
       await Transaction.create({
         id: custom.tx,
         status: 'success'

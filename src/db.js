@@ -186,7 +186,8 @@ CartItem.belongsTo(User, {
 
 export const Transaction = db.define('transaction', {
 	id: {
-		type: Sequelize.STRING
+		type: Sequelize.STRING,
+		primaryKey: true
 	},
 	status: {
 		type: Sequelize.ENUM('success', 'fail')
