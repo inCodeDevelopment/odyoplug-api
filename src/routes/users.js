@@ -159,7 +159,7 @@ users.post('/requestActivationEmail',
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('user-activation', user.email, {
-			url: `${baseUrl}/activate`,
+			url: url.resolve(baseUrl, '/auth/registration/activate'),
 			activationToken: activationToken,
 			email: user.email,
 			username: user.username
@@ -206,7 +206,7 @@ users.post('/requestPasswordRestoreEmail',
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('restore-password', user.email, {
-			url: `${baseUrl}/restore-password`,
+			url: url.resolve(baseUrl, '/auth/forgot/password/restore-password'),
 			passwordRestoreToken: passwordRestoreToken,
 			email: user.email,
 			username: user.username
