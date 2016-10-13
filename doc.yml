@@ -152,8 +152,8 @@ paths:
             responses:
                 '200':
                     description: Sent
-                '404':
-                    description: User not found
+                '400':
+                    description: Invalid input
     /users/requestPasswordRestoreEmail:
         post:
             tags: [user]
@@ -171,8 +171,8 @@ paths:
             responses:
                 '200':
                     description: Sent
-                '404':
-                    description: User not found
+                '400':
+                    description: Invalid input
     /users/signin:
         post:
             tags: [user]

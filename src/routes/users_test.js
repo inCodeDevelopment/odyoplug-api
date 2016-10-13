@@ -153,7 +153,7 @@ describe('api /users', function () {
 
 			mailer.send.restore();
 		});
-		it('should return 404 if user not exists', async function() {
+		it('should return 400 if user not exists', async function() {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
@@ -161,7 +161,7 @@ describe('api /users', function () {
 					login: 'teasdasdasfsafsst'
 				});
 
-			requestActivationEmailResponse.statusCode.should.be.equal(404);
+			requestActivationEmailResponse.statusCode.should.be.equal(400);
 
 			mailer.send.should.not.be.calledWithMatch('user-activation');
 
@@ -187,7 +187,7 @@ describe('api /users', function () {
 
 			mailer.send.restore();
 		});
-		it('should return 404 if user not exists', async function() {
+		it('should return 400 if user not exists', async function() {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
@@ -195,7 +195,7 @@ describe('api /users', function () {
 					login: 'teasdasdasfsafsst'
 				});
 
-			requestPasswordRestoreEmailResponse.statusCode.should.be.equal(404);
+			requestPasswordRestoreEmailResponse.statusCode.should.be.equal(400);
 
 			mailer.send.should.not.be.calledWithMatch('restore-password');
 

@@ -140,8 +140,14 @@ users.post('/requestActivationEmail',
 		});
 
 		if (!user) {
-			throw new HttpError(404, 'user_not_found', {
-				message: 'User not found'
+			throw new HttpError(400, 'invalid_input', {
+				errors: {
+					login: {
+						param: 'login',
+						msg: 'User not found',
+						value: req.body.login
+					}
+				}
 			});
 		}
 
@@ -180,8 +186,14 @@ users.post('/requestPasswordRestoreEmail',
 		});
 
 		if (!user) {
-			throw new HttpError(404, 'user_not_found', {
-				message: 'User not found'
+			throw new HttpError(400, 'invalid_input', {
+				errors: {
+					login: {
+						param: 'login',
+						msg: 'User not found',
+						value: req.body.login
+					}
+				}
 			});
 		}
 
