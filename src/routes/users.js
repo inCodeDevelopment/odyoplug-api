@@ -111,7 +111,7 @@ users.post('/signup',
 
 		const baseUrl = req.get('Referrer') || config.get('baseUrl');
 		await mailer.send('user-activation', req.body.email, {
-			url: `${baseUrl}/activate`,
+			url: url.resolve(baseUrl, '/auth/registration/activate'),
 			activationToken: user.activationToken,
 			email: user.email,
 			username: user.username
@@ -215,19 +215,24 @@ users.post('/activate',
 		}
 	}),
 	wrap(async function(req, res) {
-		const [updated] = await User.update({
-			active: true,
-			activationToken: null
-		},{
+		const user = await User.findOne({
 			where: {
 				email: req.body.email,
 				activationToken: req.body.activationToken
 			}
 		});
 
-		if (updated) {
+		if (user) {
+			await user.update({
+				active: true,
+				activationToken: null
+			})
+
 			res.status(200).json({
-				status: 'activated'
+				status: 'activated',
+				access_token: signToken({
+					user_id: user.id
+				})
 			});
 		} else {
 			throw new HttpError(400, 'invalid_activation_token');

@@ -125,6 +125,7 @@ describe('api /users', function () {
 				.send({email, activationToken});
 
 			activateResponse.statusCode.should.be.equal(200);
+			activateResponse.body.should.have.property('access_token');
 		});
 		it('should reject invalid token', async function() {
 			const activateResponse = await agent.post('/api/users/activate')
