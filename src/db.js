@@ -213,4 +213,19 @@ Beat.belongsToMany(Transaction, {
 	as: 'transactions'
 });
 
+Transaction.addScope('with:beats', {
+	include: [
+		{
+			model: Beat,
+			as: 'beats',
+			include: [
+				{
+					model: BeatFile,
+					as: 'file'
+				}
+			]
+		}
+	]
+})
+
 export const ready = db.authenticate();
