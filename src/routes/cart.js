@@ -171,7 +171,7 @@ cart.post('/:id/clear',
   returnCart
 );
 
-cart.get('/my/paypalBuyNowButton',
+cart.post('/my/transaction',
   wrap(async function (req, res) {
     const beats = await CartItem.findAll({
       where: req.cart,
@@ -195,11 +195,11 @@ cart.get('/my/paypalBuyNowButton',
       items[`item_number_${i+1}`] = beat.id;
     }
 
-    const tx = uuid.v4();
+    const transactionId = uuid.v4();
 
     let custom = JSON.stringify({
       user: req.user_id,
-      tx: tx
+      transactionId: transactionId
     });
 
     let baseUrl;
@@ -210,7 +210,7 @@ cart.get('/my/paypalBuyNowButton',
     }
 
     res.status(200).json({
-      tx: tx,
+      transactionId: transactionId,
       action: config.get('paypal.mode') === 'sandbox'
         ? 'https://www.sandbox.paypal.com/cgi-bin/webscr'
         : 'https://www.paypal.com/cgi-bin/webscr',
@@ -220,100 +220,12 @@ cart.get('/my/paypalBuyNowButton',
         business: config.get('paypal.receiver'),
         no_shipping: '1',
         return: url.resolve(config.get('baseUrl'), '/paypal_beats_callback'),
-        notify_url: config.get('baseUrl') + '/api/cart/ipn',
+        notify_url: config.get('baseUrl') + '/api/ipn/beatsPurchase',
         custom: custom,
         currency_code: 'USD',
         ...items
       }
     })
-  })
-);
-
-cart.get('/my/status',
-  wrap(async function(req, res) {
-    const tx = await Transaction.findById(req.query.tx);
-    if (!tx) {
-      res.status(200).json({
-        status: 'wait'
-      });
-    } else {
-      res.status(200).json({
-        status: tx.status
-      });
-    }
-  })
-);
-
-cart.post('/ipn',
-  (req, res, next) => {
-    ipn.verify(req.body, {
-      allow_sandbox: config.get('paypal.mode') === 'sandbox'
-    }, next);
-  },
-  wrap(async function(req, res) {
-    if (req.body.payment_status !== 'Completed') {
-      res.status(200).send();
-      return;
-    }
-
-    const custom = JSON.parse(req.body.custom);
-
-    if (!custom.tx) {
-      res.status(500).send();
-      return;
-    }
-
-    const user = await User.findById(custom.user);
-
-    if (!user) {
-      await Transaction.create({
-        id: custom.tx,
-        status: 'fail'
-      });
-      res.status(500).send();
-      return;
-    }
-
-    // if this transaction handled already
-    if (await Transaction.findById(custom.tx)) {
-      res.status(200).send();
-      return;
-    }
-
-    let i=0;
-    let beats = [];
-    let amount;
-    while (req.body[`item_number_${i+1}`]) {
-      const beat = await Beat.findById(req.body[`item_number_${i+1}`]);
-      beats.push(beat);
-      amount += beat.price;
-    }
-
-    if (parseFloat(req.body.mc_gross) !== amount || req.body.mc_currency !== 'USD') {
-      await Transaction.create({
-        id: custom.tx,
-        status: 'success'
-      });
-      res.status(500).send();
-      return;
-    }
-
-    // @TODO save relation between user and bought beat
-    await CartItem.destroy({
-      where: {
-        userId: custom.user,
-        beatId: {
-          $in: beats.map(_.property('id'))
-        }
-      }
-    });
-
-    await Transaction.create({
-      id: custom.tx,
-      status: 'success'
-    });
-
-    res.status(200).send()
   })
 );
 

@@ -189,9 +189,28 @@ export const Transaction = db.define('transaction', {
 		type: Sequelize.STRING,
 		primaryKey: true
 	},
+	type: {
+		type: Sequelize.ENUM('beats_purchase', 'beat_sell'),
+		allowNull: false
+	},
+	amount: {
+		type: Sequelize.FLOAT,
+		allowNull: false
+	},
 	status: {
-		type: Sequelize.ENUM('success', 'fail')
+		type: Sequelize.ENUM('wait', 'success', 'fail'),
+		allowNull: false
 	}
+});
+
+Transaction.belongsTo(User);
+Transaction.belongsToMany(Beat, {
+  through: 'TransactionBeat',
+	as: 'beats'
+});
+Beat.belongsToMany(Transaction, {
+	through: 'TransactionBeat',
+	as: 'transactions'
 });
 
 export const ready = db.authenticate();

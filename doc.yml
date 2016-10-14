@@ -22,6 +22,8 @@ tags:
     description: Shopping cart operations
   - name: payment
     description: Payment operations
+  - name: transaction
+    description: Transaction operations
 
 securityDefinitions:
     access_token:
@@ -547,9 +549,9 @@ paths:
             responses:
                 '200':
                     $ref: '#/responses/Cart'
-    /cart/my/paypalBuyNowButton:
-        get:
-            tags: [cart, payment]
+    /cart/my/transaction:
+        post:
+            tags: [cart, payment, transaction]
             summary: Get paypal buy now button parameters
             operationId: cartPaypalBuyNowButton
             responses:
@@ -558,31 +560,40 @@ paths:
                     schema:
                         type: object
                         properties:
-                            tx:
+                            transactionId:
                                 type: string
                             action:
                                 type: string
                             data:
                                 type: object
-    /cart/my/status:
+    /transactions:
         get:
-            tags: [cart, payment]
-            summary: Get payment status for beats cart
-            operationId: cartGetPaymentStatus
-            parameters:
-                - in: query
-                  name: tx
-                  type: string
-                  required: true
+            tags: [transaction]
+            summary: Get list of user transactions
+            operationId: transactionsGet
             responses:
                 '200':
-                    description: Status
+                    description: Success
                     schema:
                         type: object
                         properties:
-                            status:
-                                type: string
-                                enum: [wait, fail, success]
+                            transactions:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/Transaction'
+    /transactions/{transactionId}:
+        get:
+            tags: [transaction]
+            summary: Get transaction by id
+            operationId: transactionsGetById
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            transaction:
+                                $ref: '#/definitions/Transaction'
 responses:
     Cart:
         description: Success
@@ -693,6 +704,28 @@ definitions:
                 type: number
             name:
                 type: string
+    Transaction:
+        type: object
+        properties:
+            id:
+                type: string
+            type:
+                type: string
+                enum:
+                    - beats_purchase
+                    - beat_sell
+            amount:
+                type: number
+            status:
+                type: string
+                enum:
+                    - wait
+                    - success
+                    - fail
+            beats:
+                type: array
+                items:
+                    $ref: '#/definitions/Beat'
     GenericError:
         type: object
         properties:
