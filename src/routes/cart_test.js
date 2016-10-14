@@ -22,7 +22,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('GET /cart/:id', function () {
+	describe('GET /:id', function () {
 		let beatId, buyerAccessToken;
 
 		beforeEach('create beat', async function() {
@@ -73,7 +73,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('POST /cart/my/import', function () {
+	describe('POST /my/import', function () {
 		let beatId, buyerAccessToken;
 
 		beforeEach('create beat', async function() {
@@ -105,7 +105,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('POST /cart/:id/addBeat', function () {
+	describe('POST /:id/addBeat', function () {
 		let beatId;
 
 		beforeEach('create beat', async function() {
@@ -147,7 +147,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('POST /cart/:id/removeBeat', function () {
+	describe('POST /:id/removeBeat', function () {
 		let beatId;
 
 		beforeEach('create beat', async function() {
@@ -171,7 +171,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('POST /cart/:id/clear', function () {
+	describe('POST /:id/clear', function () {
 		let beatId;
 
 		beforeEach('create beat', async function() {
@@ -193,7 +193,7 @@ describe('api /cart', function () {
 		});
 	});
 
-	describe('POST /cart/my/transaction', function () {
+	describe('POST /my/transaction', function () {
 		let accessToken, accessTokenBuyer;
 
 		beforeEach('create beat', async function() {
