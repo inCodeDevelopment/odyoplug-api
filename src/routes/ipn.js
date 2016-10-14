@@ -16,7 +16,7 @@ ipn.use(
 	}
 )
 
-ipn.post('/beatPurchase',
+ipn.post('/beatsPurchase',
   wrap(async function(req, res) {
     if (req.body.payment_status !== 'Completed') {
       res.status(200).send();

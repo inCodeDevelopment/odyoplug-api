@@ -192,4 +192,8 @@ describe('api /cart', function () {
 			removeBeats.body.cart.beats.length.should.be.equal(0);
 		});
 	});
+
+	describe('POST /cart/my/transaction', function () {
+		it('should create transaction and return paypal button params');
+	});
 });
