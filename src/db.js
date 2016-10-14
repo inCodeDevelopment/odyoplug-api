@@ -53,6 +53,10 @@ export const User = db.define('user', {
 	},
 	passwordRestoreToken: {
 		type: Sequelize.STRING
+	},
+	balance: {
+		type: Sequelize.FLOAT,
+		defaultValue: 0
 	}
 }, {
 	timestamps: false,
@@ -84,6 +88,7 @@ export const User = db.define('user', {
 			delete values.active;
 			delete values.activationToken;
 			delete values.passwordChangeToken;
+			delete values.balance;
 
 			return values;
 		}
@@ -190,7 +195,7 @@ export const Transaction = db.define('transaction', {
 		primaryKey: true
 	},
 	type: {
-		type: Sequelize.ENUM('beats_purchase', 'beat_sell'),
+		type: Sequelize.ENUM('beats_purchase', 'beats_sell'),
 		allowNull: false
 	},
 	amount: {
