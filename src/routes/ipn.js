@@ -18,64 +18,52 @@ ipn.use(
 
 ipn.post('/beatsPurchase',
   wrap(async function(req, res) {
+		const custom = JSON.parse(req.body.custom);
+
+		const transaction = await Transaction.findById(custom.transactionId);
+		if (transaction) {
+			res.status(500).send();
+			return;
+		}
+
+		const user = await User.findById(custom.user);
+		if (!user) {
+			res.status(500).send();
+			return;
+		}
+
+		if (['Failed', 'Denined'].includes(req.body.payment_status)) {
+			await transaction.update({
+				status: 'fail'
+			});
+			return;
+		}
+
     if (req.body.payment_status !== 'Completed') {
       res.status(200).send();
       return;
     }
 
-    const custom = JSON.parse(req.body.custom);
-
-    if (!custom.transactionId) {
-      res.status(500).send();
-      return;
-    }
-
-    const user = await User.findById(custom.user);
-
-    if (!user) {
-      await Transaction.create({
-        id: custom.transactionId,
+    if (parseFloat(req.body.mc_gross) !== transaction.amount || req.body.mc_currency !== 'USD') {
+      await transaction.update({
         status: 'fail'
       });
       res.status(500).send();
       return;
     }
 
-    // if this transaction handled already
-    if (await Transaction.findById(custom.transactionId)) {
-      res.status(200).send();
-      return;
-    }
-
-    let i=0;
-    let beats = [];
-    let amount;
-    while (req.body[`item_number_${i+1}`]) {
-      const beat = await Beat.findById(req.body[`item_number_${i+1}`]);
-      beats.push(beat);
-      amount += beat.price;
-    }
-
-    if (parseFloat(req.body.mc_gross) !== amount || req.body.mc_currency !== 'USD') {
-      await Transaction.create({
-        id: custom.transactionId,
-        status: 'success'
-      });
-      res.status(500).send();
-      return;
-    }
-
     // @TODO save relation between user and bought beat
+		// @TODO create transaction for seller
     await CartItem.destroy({
       where: {
         userId: custom.user,
         beatId: {
-          $in: beats.map(_.property('id'))
+          $in: await transaction.getBeats().map(_.property('id'))
         }
       }
     });
 
-    await Transaction.create({
+    await transaction.update({
       id: custom.transactionId,
       status: 'success'
     });

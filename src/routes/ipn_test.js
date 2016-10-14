@@ -17,5 +17,7 @@ describe('api /ipn', function () {
 		it('should do nothing if transaction handled already');
 		it('should return error if transaction amount does not match ipn amount');
 		it('should return error if transaction not found');
+		it('should set transaction status to fail if payment_status is Failed or Denied');
+		it('should create transaction for seller');
 	});
 });

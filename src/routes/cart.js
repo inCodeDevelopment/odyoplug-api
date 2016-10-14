@@ -189,10 +189,12 @@ cart.post('/my/transaction',
     }).map(_.property('beat'));
 
     const items = {};
+    let amount = 0;
     for (let i=0; i<beats.length ; i++) {d
       items[`item_name_${i+1}`] = beat.name;
       items[`amount_${i+1}`] = beat.price;
       items[`item_number_${i+1}`] = beat.id;
+      amount += beat.price;
     }
 
     const transactionId = uuid.v4();
@@ -201,6 +203,16 @@ cart.post('/my/transaction',
       user: req.user_id,
       transactionId: transactionId
     });
+
+    const transaction = await Transaction.create({
+      id: transactionId,
+      type: 'beats_purchase',
+      amount: amount,
+      status: 'wait',
+      userId: req.user_id
+    });
+
+    await transaction.setBeats(beats.map(_.property('id')));
 
     let baseUrl;
     if (config.get('socialAuth.resolveCallbackFromReferer')) {
