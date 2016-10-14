@@ -52,13 +52,15 @@ ipn.post('/beatsPurchase',
       return;
     }
 
+		const beats = await transaction.getBeats();
+
     // @TODO save relation between user and bought beat
 		// @TODO create transaction for seller
     await CartItem.destroy({
       where: {
         userId: custom.user,
         beatId: {
-          $in: await transaction.getBeats().map(_.property('id'))
+          $in: beats.map(_.property('id'))
         }
       }
     });

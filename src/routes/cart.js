@@ -190,11 +190,11 @@ cart.post('/my/transaction',
 
     const items = {};
     let amount = 0;
-    for (let i=0; i<beats.length ; i++) {d
-      items[`item_name_${i+1}`] = beat.name;
-      items[`amount_${i+1}`] = beat.price;
-      items[`item_number_${i+1}`] = beat.id;
-      amount += beat.price;
+    for (let i=0; i<beats.length ; i++) {
+      items[`item_name_${i+1}`] = beats[i].name;
+      items[`amount_${i+1}`] = beats[i].price;
+      items[`item_number_${i+1}`] = beats[i].id;
+      amount += beats[i].price;
     }
 
     const transactionId = uuid.v4();
