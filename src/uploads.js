@@ -11,7 +11,7 @@ uploads.use(
 			res.setHeader(
 				'Content-Disposition',
 				contentDisposition(
-					path.slice(path.indexOf('$_$')+1)
+					path.slice(path.indexOf('$_$')+3)
 				)
 			);
 		}
