@@ -35,5 +35,14 @@
 			"domain": "MAILER_MAILGUN_DOMAIN"
 		},
 		"from": "MAILER_FROM"
+	},
+	"paypal": {
+		"nvp": {
+			"username": "PAYPAL_NVP_USERNAME",
+			"password": "PAYPAL_NVP_PASSWORD",
+			"signature": "PAYPAL_NVP_SIGNATURE"
+		},
+		"receiver": "PAYPAL_RECEIVER",
+		"mode": "PAYPAL_MODE"
 	}
 }

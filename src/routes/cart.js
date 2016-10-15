@@ -6,25 +6,14 @@ import {wrap} from './utils';
 import { CartItem, Beat, BeatFile, Transaction, User } from 'db';
 import _ from 'lodash';
 import url from 'url';
-import ipn from 'paypal-ipn';
 import config from 'config';
+import paypal from 'paypal';
 
 const cart = Router();
 
 const returnCart = wrap(async function (req, res) {
-  const beats = await CartItem.findAll({
-    where: req.cart,
-    include: [
-      {
-        model: Beat,
-        include: [
-          {
-            model: BeatFile,
-            as: 'file'
-          }
-        ]
-      }
-    ]
+  const beats = await CartItem.scope('with:beats').findAll({
+    where: req.cart
   }).map(_.property('beat'));
 
   res.status(200).json({
@@ -173,71 +162,82 @@ cart.post('/:id/clear',
 
 cart.post('/my/transaction',
   wrap(async function (req, res) {
-    const beats = await CartItem.findAll({
-      where: req.cart,
-      include: [
-        {
+    const beats = await CartItem
+      .findAll({
+        where: req.cart,
+        include: [{
           model: Beat,
           include: [
-            {
-              model: BeatFile,
-              as: 'file'
-            }
+            { model: User },
+            { model: BeatFile, as: 'file' }
           ]
-        }
-      ]
-    }).map(_.property('beat'));
-
-    const items = {};
-    let amount = 0;
-    for (let i=0; i<beats.length ; i++) {
-      items[`item_name_${i+1}`] = beats[i].name;
-      items[`amount_${i+1}`] = beats[i].price;
-      items[`item_number_${i+1}`] = beats[i].id;
-      amount += beats[i].price;
-    }
-
-    const transactionId = uuid.v4();
-
-    let custom = JSON.stringify({
-      user: req.user_id,
-      transactionId: transactionId
-    });
+        }]
+      })
+      .map(_.property('beat'));
 
     const transaction = await Transaction.create({
-      id: transactionId,
+      id: sequelize.literal(`'ODY-' || nextval('transactions_id_seq')`),
       type: 'beats_purchase',
-      amount: amount,
-      status: 'wait',
-      userId: req.user_id
+      amount: _.sumBy(beats, 'price'),
+      status: 'wait'
     });
 
-    await transaction.setBeats(beats.map(_.property('id')));
-
-    let baseUrl;
-    if (config.get('socialAuth.resolveCallbackFromReferer')) {
-      baseUrl = req.get('Referer')
-    } else {
-      baseUrl = config.get('baseUrl');
+    for (const beat of beats) {
+      await transaction.createItem({
+        price: beat.price,
+        type: 'beat',
+        beatId: beat.id
+      });
     }
 
-    res.status(200).json({
-      transactionId: transactionId,
-      action: config.get('paypal.mode') === 'sandbox'
-        ? 'https://www.sandbox.paypal.com/cgi-bin/webscr'
-        : 'https://www.paypal.com/cgi-bin/webscr',
-      data: {
-        cmd: '_cart',
-        upload: '1',
-        business: config.get('paypal.receiver'),
-        no_shipping: '1',
-        return: url.resolve(config.get('baseUrl'), '/paypal_beats_callback'),
-        notify_url: config.get('baseUrl') + '/api/ipn/beatsPurchase',
-        custom: custom,
-        currency_code: 'USD',
-        ...items
+    function tax(price) {
+      return Math.ceil(price * 0.1 * 100) / 100;
+    }
+
+    const taxAmount = _.sumBy(beats, beat => tax(beat.price));
+    const payments = [
+      {
+        currency: 'USD',
+        action: 'Sale',
+        description: 'ODYOPLUG TAX',
+        receiver: config.get('paypal.receiver'),
+        id: `${transaction.id}-TAX`,
+        items: [{
+          id: 'ODYOPLUG-TAX',
+          amount: taxAmount
+        }]
       }
-    })
+    ];
+
+    const beatsByUser = _.groupBy(beats, 'userId');
+    for (const userId of Object.keys(beatsByUser)) {
+      payments.push({
+        currency: 'USD',
+        action: 'Sale',
+        description: beatsByUser[userId][0].user.name,
+        receiver: beatsByUser[userId][0].user.paypalReceiver,
+        id: `${transaction.id}-${userId}`,
+        items: beatsByUser[userId].map(
+          beat => ({
+            name: beat.name,
+            id: `BEAT-${beat.id}`,
+            amount: Math.floor((beat.price - tax(beat.price))*100) / 100
+          })
+        )
+      });
+    }
+
+    const baseURL = req.get('Referer') || config.baseUrl;
+
+    const expressCheckout = await paypal.setExpressCheckout({
+      returnURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
+      cancelURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
+      payments: payments
+    });
+
+    res.status(200).json({
+      url: paypal.checkoutURL(expressCheckout.TOKEN)
+    });
   })
 );
 

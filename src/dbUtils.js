@@ -21,6 +21,16 @@ export async function createSequences() {
 			CACHE 1
 			OWNED BY users.username;
 	`);
+
+	await db.query(`
+		CREATE SEQUENCE public.transactions_id_seq
+			INCREMENT 1
+			MINVALUE 1
+			MAXVALUE 9223372036854775807
+			START 1
+			CACHE 1
+			OWNED BY transactions.id;
+	`);
 }
 
 export async function clear() {

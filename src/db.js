@@ -54,9 +54,8 @@ export const User = db.define('user', {
 	passwordRestoreToken: {
 		type: Sequelize.STRING
 	},
-	balance: {
-		type: Sequelize.FLOAT,
-		defaultValue: 0
+	paypalReceiver: {
+		type: Sequelize.STRING
 	}
 }, {
 	timestamps: false,
@@ -88,7 +87,6 @@ export const User = db.define('user', {
 			delete values.active;
 			delete values.activationToken;
 			delete values.passwordChangeToken;
-			delete values.balance;
 
 			return values;
 		}
@@ -156,6 +154,14 @@ User.hasMany(Beat, {
 Beat.belongsTo(BeatFile, {
 	as: 'file'
 });
+Beat.addScope('with:file', {
+	include: [
+		{
+			model: BeatFile,
+			as: 'file'
+		}
+	]
+});
 
 export const CartItem = db.define('cartItem', {
 	cartId: {
@@ -184,9 +190,22 @@ export const CartItem = db.define('cartItem', {
 CartItem.belongsTo(Beat, {
 	onDelete: 'CASCADE'
 });
-
 CartItem.belongsTo(User, {
 	onDelete: 'CASCADE'
+});
+
+CartItem.addScope('with:beats', {
+	include: [
+		{
+			model: Beat,
+			include: [
+				{
+					model: BeatFile,
+					as: 'file'
+				}
+			]
+		}
+	]
 });
 
 export const Transaction = db.define('transaction', {
@@ -209,28 +228,40 @@ export const Transaction = db.define('transaction', {
 });
 
 Transaction.belongsTo(User);
-Transaction.belongsToMany(Beat, {
-  through: 'TransactionBeat',
-	as: 'beats'
-});
-Beat.belongsToMany(Transaction, {
-	through: 'TransactionBeat',
-	as: 'transactions'
-});
 
-Transaction.addScope('with:beats', {
+export const TransactionItem = db.define('transactionItem', {
+	price: {
+		type: Sequelize.FLOAT
+	},
+	type: {
+		type: Sequelize.ENUM('beat')
+	}
+});
+TransactionItem.belongsTo(Transaction, {
+	as: 'transaction'
+});
+Transaction.hasMany(TransactionItem, {
+	as: 'items'
+});
+TransactionItem.belongsTo(Beat);
+
+Transaction.addScope('with:items', {
 	include: [
 		{
-			model: Beat,
-			as: 'beats',
-			include: [
-				{
-					model: BeatFile,
-					as: 'file'
-				}
-			]
+			model: TransactionItem,
+			as: 'items',
+			include: [{
+				model: Beat,
+				as: 'beats',
+				include: [
+					{
+						model: BeatFile,
+						as: 'file'
+					}
+				]
+			}]
 		}
 	]
-})
+});
 
 export const ready = db.authenticate();

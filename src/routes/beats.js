@@ -109,16 +109,10 @@ beats.post('/',
 
 beats.get('/user/:userId',
 	wrap(async function(req, res) {
-		const beats = await Beat.findAll({
+		const beats = await Beat.scope('with:file').findAll({
 			where: {
 				userId: req.params.userId
-			},
-			include: [
-				{
-					model: BeatFile,
-					as: 'file'
-				}
-			]
+			}
 		});
 
 		res.status(200).json({beats});
@@ -151,38 +145,26 @@ beats.get('/search',
 			query.genreId = req.query.genreId;
 		}
 
-		const freshBeats = await Beat.findAll({
+		const freshBeats = await Beat.scope('with:file').findAll({
 			where: {
 				...query,
 				createdAt: {
 					$gte: new Date(new Date() - config.get('search.fresh.days') * 24 * 60 * 60 * 1000)
 				}
 			},
-			include: [
-				{
-					model: BeatFile,
-					as: 'file'
-				}
-			],
 			order: [
 				['createdAt', 'DESC']
 			],
 			limit: config.get('search.fresh.limit')
 		});
 
-		const beats = await Beat.findAll({
+		const beats = await Beat.scope('with:file').findAll({
 			where: {
 				...query,
 				id: {
 					$notIn: freshBeats.map(beat => beat.id)
 				}
 			},
-			include: [
-				{
-					model: BeatFile,
-					as: 'file'
-				}
-			],
 			order: [
 				['createdAt', 'DESC']
 			]
@@ -222,14 +204,7 @@ beats.post('/:id(\\d+)',
 		}).catch(catchBeatError);
 
 		if (updated) {
-			const beat = await Beat.findById(req.params.id, {
-				include: [
-					{
-						model: BeatFile,
-						as: 'file'
-					}
-				]
-			})
+			const beat = await Beat.scope('with:file').findById(req.params.id)
 
 			res.status(200).json({beat});
 		} else {

@@ -38,9 +38,10 @@
     "passport-facebook": "^2.1.1",
     "passport-google-oauth": "^1.0.0",
     "passport-twitter": "^1.0.4",
-    "paypal-ipn": "^3.0.0",
     "pg": "^6.1.0",
     "pg-hstore": "^2.3.2",
+    "request": "^2.75.0",
+    "request-promise": "^4.1.1",
     "sequelize": "^3.24.2",
     "sha1": "^1.1.1",
     "winston": "^2.2.0"
@@ -59,7 +60,8 @@
     "test": "NODE_ENV=test mocha --opts mocha.opts src/**/*_test.js",
     "build": "babel src -d dist",
     "start": "node -r babel-register src/server.js",
-    "db:bootstrap": "node -r babel-register scripts/db/bootstrap.js"
+    "db:bootstrap": "node -r babel-register scripts/db/bootstrap.js",
+    "db:reset": "node -r babel-register scripts/db/reset.js"
   },
   "author": "",
   "license": "ISC"

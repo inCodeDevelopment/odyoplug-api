@@ -109,7 +109,7 @@ users.post('/signup',
 		await user.setPassword(req.body.password);
 		await user.save().catch(catchUniqueConstraintError);
 
-		const baseUrl = req.get('Referrer') || config.get('baseUrl');
+		const baseUrl = req.get('Referer') || config.get('baseUrl');
 		await mailer.send('user-activation', req.body.email, {
 			url: url.resolve(baseUrl, '/auth/registration/activate'),
 			activationToken: user.activationToken,

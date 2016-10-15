@@ -40,8 +40,13 @@
 		"from": ""
 	},
 	"paypal": {
-		"mode": "sandbox",
-		"receiver": "artemie.smirnov+merchant@gmail.com"
+		"nvp": {
+			"username": "",
+			"password": "",
+			"signature": ""
+		},
+		"receiver": "",
+		"mode": "sandbox"
 	},
 	"search": {
 		"fresh": {

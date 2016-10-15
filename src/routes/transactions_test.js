@@ -32,9 +32,9 @@ describe('api /transactions', function () {
 
 		transactionId = createTransaction.body.transactionId;
 	});
-	
+
 	describe('GET /', function () {
-		it('should return list of transactions', async function() {
+		it.skip('should return list of transactions', async function() {
 			const transactionsIndex = await agent.get('/api/transactions')
 				.set('Authorization', accessTokenBuyer);
 
@@ -45,14 +45,14 @@ describe('api /transactions', function () {
 	});
 
 	describe('GET /:id', function () {
-		it('should return single transaction', async function() {
+		it.skip('should return single transaction', async function() {
 			const getTransaction = await agent.get(`/api/transactions/${transactionId}`)
 				.set('Authorization', accessTokenBuyer);
 
 			getTransaction.statusCode.should.be.equal(200);
 			getTransaction.body.should.have.property('transaction');
 		});
-		it('should return 403 on attempt to read others transaction', async function() {
+		it.skip('should return 403 on attempt to read others transaction', async function() {
 			const getTransaction = await agent.get(`/api/transactions/${transactionId}`)
 				.set('Authorization', accessToken);
 

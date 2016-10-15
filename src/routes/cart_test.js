@@ -192,34 +192,4 @@ describe('api /cart', function () {
 			removeBeats.body.cart.beats.length.should.be.equal(0);
 		});
 	});
-
-	describe('POST /my/transaction', function () {
-		let accessToken, accessTokenBuyer;
-
-		beforeEach('create beat', async function() {
-			accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
-			accessTokenBuyer = await createAndActivateUser('test-buyer@gmail.com', 'buyer', '123123');
-
-			const beatId = await createBeat(accessToken);
-
-			const addBeat = await agent.post('/api/cart/my/addBeat')
-				.set('Authorization', accessTokenBuyer)
-				.send({
-					beatId: beatId
-				});
-		});
-
-		it('should create transaction and return paypal button params', async function() {
-			const createTransaction = await agent.post('/api/cart/my/transaction')
-				.set('Authorization', accessTokenBuyer)
-				.send();
-
-			createTransaction.statusCode.should.be.equal(200);
-			createTransaction.body.should.have.property('transactionId');
-
-			createTransaction.body.should.have.property('data');
-			createTransaction.body.data.should.have.property('item_name_1');
-			createTransaction.body.data.should.have.property('custom');
-		});
-	});
 });
