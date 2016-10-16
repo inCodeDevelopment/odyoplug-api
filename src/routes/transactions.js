@@ -14,11 +14,13 @@ const transactions = Router();
 transactions.get('/',
 	authorizedOnly,
 	wrap(async function(req, res) {
-		const transactions = await Transaction.scope('with:items').findAll({
-			where: {
-				userId: req.user_id
-			}
-		});
+		const transactions = await Transaction
+			.scope('with:subTransactions', 'with:items')
+			.findAll({
+				where: {
+					userId: req.user_id
+				}
+			});
 
 		res.status(200).json({transactions});
 	})
@@ -27,12 +29,14 @@ transactions.get('/',
 transactions.get('/getByPayPalECToken',
 	authorizedOnly,
 	wrap(async function(req, res) {
-		const transaction = await Transaction.scope('with:items').findOne({
-			where: {
-				userId: req.user_id,
-				paypalECToken: req.query.ecToken
-			}
-		});
+		const transaction = await Transaction
+			.scope('with:subTransactions', 'with:items')
+			.findOne({
+				where: {
+					userId: req.user_id,
+					paypalECToken: req.query.ecToken
+				}
+			});
 
 		if (!transaction) {
 			throw new HttpError(404, 'not_found');
@@ -43,6 +47,47 @@ transactions.get('/getByPayPalECToken',
 	})
 );
 
+const updateTransactionInfoByPayPalECToken = wrap(
+	async function(req, res) {
+		const transaction = await Transaction
+			.scope('with:subTransactions', 'with:items')
+			.findOne({
+				where: {
+					userId: req.user_id,
+					paypalECToken: req.body.ecToken
+				}
+			});
+
+		if (!transaction) {
+			throw new HttpError(404, 'not_found');
+		}
+
+		const ecInfo = await paypal.getExpressCheckoutInfo(req.body.ecToken);
+
+		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionNotInitiated' || ecInfo.CHECKOUTSTATUS === 'PaymentActionFailed') {
+			transaction.status = 'fail';
+		}
+		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionInProgress') {
+			transaction.status = 'wait';
+		}
+		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionCompleted') {
+			transaction.status = 'success';
+		}
+
+		await Transaction.update({
+			status: transaction.status
+		}, {
+			where: {
+				superTransactionId: transaction.id
+			}
+		});
+		await transaction.save();
+
+		await transaction.reload();
+
+		res.status(200).json({transaction})
+	}
+);
 
 transactions.post('/finalizeByPayPalECToken',
 	authorizedOnly,
@@ -55,19 +100,23 @@ transactions.post('/finalizeByPayPalECToken',
 		}
 	}),
 	wrap(async function(req, res) {
-		const transaction = await Transaction.scope('with:items').findOne({
-			where: {
-				userId: req.user_id,
-				paypalECToken: req.body.ecToken
-			}
-		});
+		const transaction = await Transaction
+			.scope('with:subTransactions', 'with:items')
+			.findOne({
+				where: {
+					userId: req.user_id,
+					paypalECToken: req.body.ecToken
+				}
+			});
 
 		if (!transaction) {
 			throw new HttpError(404, 'not_found');
 		}
 
 		const ecInfo = await paypal.getExpressCheckoutInfo(req.body.ecToken);
-
+		if (!ecInfo.PAYERID) {
+			return;
+		}
 		const payments = {};
 		for (const key of Object.keys(ecInfo)) {
 			if (key.startsWith('PAYMENTREQUEST_') || key.startsWith('L_PAYMENTREQUEST_')) {
@@ -75,13 +124,22 @@ transactions.post('/finalizeByPayPalECToken',
 			}
 		}
 
-		const doCheckout = await paypal.doExpressCheckoutPayment(req.body.ecToken, ecInfo.PAYERID, payments);
+		await paypal.doExpressCheckoutPayment(req.body.ecToken, ecInfo.PAYERID, payments);
+	}),
+	updateTransactionInfoByPayPalECToken
+);
 
-		transaction.status = 'success';
-		await transaction.save();
-
-		res.status(200).json({transaction});
-	})
+transactions.post('/updateTransactionInfoByPayPalECToken',
+	authorizedOnly,
+	validate({
+		body: {
+			ecToken: {
+				errorMessage: 'Invalid ec token',
+				notEmpty: true
+			}
+		}
+	}),
+	updateTransactionInfoByPayPalECToken
 );
 
 transactions.get('/:id',

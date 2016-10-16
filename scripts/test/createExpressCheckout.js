@@ -33,5 +33,5 @@ import { createAndActivateUser, createBeat } from 'routes/testUtils';
       ecToken: ecToken
     });
 
-  console.log(finalizeTransaction.body)
+  console.log(JSON.stringify(finalizeTransaction.body, null, 2))
 })();

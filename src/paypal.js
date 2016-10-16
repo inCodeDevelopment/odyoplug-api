@@ -80,7 +80,7 @@ export default {
         ...buildPaymentRequests(options.payments)
       }
     });
-		console.log(payload)
+
 		if (payload.ACK === 'Failure') {
 			throw new PayPalError(payload);
 		} else {

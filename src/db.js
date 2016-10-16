@@ -214,7 +214,7 @@ export const Transaction = db.define('transaction', {
 		primaryKey: true
 	},
 	type: {
-		type: Sequelize.ENUM('beats_purchase', 'beats_sell'),
+		type: Sequelize.ENUM('beats_purchase', 'beats_sell', 'tax'),
 		allowNull: false
 	},
 	amount: {
@@ -222,15 +222,27 @@ export const Transaction = db.define('transaction', {
 		allowNull: false
 	},
 	status: {
-		type: Sequelize.ENUM('wait', 'success', 'fail'),
+		type: Sequelize.ENUM('wait', 'success', 'fail', 'vary'),
 		allowNull: false
 	},
 	paypalECToken: {
 		type: Sequelize.STRING
-	},
-	payments: {
-		type: Sequelize.INTEGER
 	}
+}, {
+	defaultScope: {
+		where: {
+			superTransactionId: null
+		}
+	}
+});
+
+Transaction.hasMany(Transaction, {
+	as: 'subTransactions',
+	foreignKey: 'superTransactionId'
+});
+Transaction.belongsTo(Transaction, {
+	as: 'superTransaction',
+	foreignKey: 'superTransactionId'
 });
 
 Transaction.belongsTo(User);
@@ -265,6 +277,15 @@ Transaction.addScope('with:items', {
 					}
 				]
 			}]
+		}
+	]
+});
+
+Transaction.addScope('with:subTransactions', {
+	include: [
+		{
+			model: Transaction.scope('with:items'),
+			as: 'subTransactions'
 		}
 	]
 });

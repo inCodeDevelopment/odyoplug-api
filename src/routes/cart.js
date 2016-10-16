@@ -193,6 +193,7 @@ cart.post('/my/transaction',
       status: 'wait'
     });
 
+    /*
     for (const beat of beats) {
       await transaction.createItem({
         price: beat.price,
@@ -200,9 +201,14 @@ cart.post('/my/transaction',
         beatId: beat.id
       });
     }
+    */
 
     function tax(price) {
       return Math.ceil(price * 0.1 * 100) / 100;
+    }
+
+    function priceAT(price) {
+      return Math.floor((price - tax(price))*100) / 100
     }
 
     const taxAmount = _.sumBy(beats, beat => tax(beat.price));
@@ -219,6 +225,13 @@ cart.post('/my/transaction',
         }]
       }
     ];
+    await transaction.createSubTransaction({
+      userId: req.user_id,
+      id: `${transaction.id}-TAX`,
+      type: 'tax',
+      amount: taxAmount,
+      status: 'wait'
+    });
 
     const beatsByUser = _.groupBy(beats, 'userId');
     for (const userId of Object.keys(beatsByUser)) {
@@ -232,10 +245,26 @@ cart.post('/my/transaction',
           beat => ({
             name: beat.name,
             id: `BEAT-${beat.id}`,
-            amount: Math.floor((beat.price - tax(beat.price))*100) / 100
+            amount: priceAT(beat.price)
           })
         )
       });
+
+      const subTransactions = await transaction.createSubTransaction({
+        userId: req.user_id,
+        id: `${transaction.id}-${userId}`,
+        type: 'beats_purchase',
+        amount: _.sumBy(beatsByUser[userId], beat => priceAT(beat.price)),
+        status: 'wait'
+      });
+
+      for (const beat of beatsByUser[userId]) {
+        await subTransactions.createItem({
+          price: beat.price,
+          type: 'beat',
+          beatId: beat.id
+        });
+      }
     }
 
     const baseURL = req.get('Referer') || config.baseUrl;
