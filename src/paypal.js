@@ -27,6 +27,14 @@ const paypalRequest = request.defaults({
   }
 });
 
+function transformResponse(payload) {
+	if (payload.ACK === 'Failure') {
+		throw new PayPalError(payload);
+	} else {
+		return payload;
+	}
+}
+
 function buildPaymentRequests(payments) {
 	const paymentRequests = {};
 	for (let i=0 ; i<payments.length ; i++) {
@@ -81,11 +89,7 @@ export default {
       }
     });
 
-		if (payload.ACK === 'Failure') {
-			throw new PayPalError(payload);
-		} else {
-			return payload;
-		}
+	return transformResponse(payload);
   },
 
   checkoutURL(token) {
@@ -106,11 +110,7 @@ export default {
 			}
 		});
 
-		if (payload.ACK === 'Failure') {
-			throw new PayPalError(payload);
-		} else {
-			return payload;
-		}
+		return transformResponse(payload);
 	},
 	async doExpressCheckoutPayment(ecToken, payerId, paymentRequests) {
 		const payload = await paypalRequest({
@@ -124,10 +124,6 @@ export default {
 			}
 		});
 
-		if (payload.ACK === 'Failure') {
-			throw new PayPalError(payload);
-		} else {
-			return payload;
-		}
+		return transformResponse(payload);
 	}
 };

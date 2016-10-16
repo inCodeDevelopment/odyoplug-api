@@ -60,8 +60,17 @@ export const User = db.define('user', {
 }, {
 	timestamps: false,
 	classMethods: {
-	  hashPassword(password) {
+		hashPassword(password) {
 			return bcrypt.hash(password, 8)
+		},
+		findByLogin(login) {
+			const query = login.indexOf('@') === -1
+				? { username: login }
+				: { email: login };
+
+			return this.findOne({
+				where: query
+			});
 		}
 	},
 	instanceMethods: {

@@ -7,7 +7,7 @@ import qs from 'querystring';
 
 import { User } from 'db';
 
-import { sign as signToken, verify as verifyToken } from 'token';
+import { sign as signToken } from 'token';
 import { HttpError } from 'HttpError';
 import { wrap } from './utils';
 import _ from 'lodash';
@@ -15,6 +15,20 @@ import url from 'url';
 import sequelize from 'sequelize';
 import uuid from 'node-uuid';
 import mailer from 'mailer';
+
+class UserByLoginNotFoundError extends HttpError {
+	constructor(login) {
+		super(400, 'invalid_input', {
+			errors: {
+				login: {
+					param: 'login',
+					msg: 'User not found',
+					value: login
+				}
+			}
+		});
+	}
+}
 
 const schemas = {
 	username: {
@@ -137,24 +151,10 @@ users.post('/requestActivationEmail',
 		}
 	}),
 	wrap(async function(req, res) {
-		const query = req.body.login.indexOf('@') === -1
-			? { username: req.body.login }
-			: { email: req.body.login };
-
-		const user = await User.findOne({
-			where: query
-		});
+		const user = await User.findByLogin(req.body.login);
 
 		if (!user) {
-			throw new HttpError(400, 'invalid_input', {
-				errors: {
-					login: {
-						param: 'login',
-						msg: 'User not found',
-						value: req.body.login
-					}
-				}
-			});
+			throw new UserByLoginNotFoundError(req.body.login);
 		}
 
 		const activationToken = uuid.v4();
@@ -185,24 +185,10 @@ users.post('/requestPasswordRestoreEmail',
 		}
 	}),
 	wrap(async function(req, res) {
-		const query = req.body.login.indexOf('@') === -1
-			? { username: req.body.login }
-			: { email: req.body.login };
-
-		const user = await User.findOne({
-			where: query
-		});
+		const user = await User.findByLogin(req.body.login);
 
 		if (!user) {
-			throw new HttpError(400, 'invalid_input', {
-				errors: {
-					login: {
-						param: 'login',
-						msg: 'User not found',
-						value: req.body.login
-					}
-				}
-			});
+			throw new UserByLoginNotFoundError(req.body.login);
 		}
 
 		const passwordRestoreToken = uuid.v4();
@@ -314,13 +300,7 @@ users.post('/signin',
 		}
 	}),
 	wrap(async function(req, res) {
-		const query = req.body.login.indexOf('@') === -1
-			? { username: req.body.login }
-			: { email: req.body.login };
-
-		const user = await User.findOne({
-			where: query
-		});
+		const user = await User.findByLogin(req.body.login);
 
 		if (user && await user.verifyPassword(req.body.password)) {
 			if (!user.active) {
