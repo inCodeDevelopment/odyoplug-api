@@ -14,7 +14,7 @@ export async function createUser(email, username, password) {
     });
 }
 
-export async function createAndActivateUser(email, username, password) {
+export async function createAndActivateUser(email, username, password, paypalReceiver) {
   const agent = supertest(app);
 
   sinon.stub(mailer, 'send').returns(Promise.resolve());
@@ -39,7 +39,16 @@ export async function createAndActivateUser(email, username, password) {
       password: password
     });
 
-  return signInResponse.body.access_token;
+  const accessToken = signInResponse.body.access_token;
+
+  await agent.post('/api/users/me')
+    .set('Authorization', accessToken)
+    .set('Password', password)
+    .send({
+      paypalReceiver: paypalReceiver || email
+    });
+
+  return accessToken;
 }
 
 export async function createBeat(accessToken) {

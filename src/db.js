@@ -224,6 +224,12 @@ export const Transaction = db.define('transaction', {
 	status: {
 		type: Sequelize.ENUM('wait', 'success', 'fail'),
 		allowNull: false
+	},
+	paypalECToken: {
+		type: Sequelize.STRING
+	},
+	payments: {
+		type: Sequelize.INTEGER
 	}
 });
 
@@ -252,7 +258,6 @@ Transaction.addScope('with:items', {
 			as: 'items',
 			include: [{
 				model: Beat,
-				as: 'beats',
 				include: [
 					{
 						model: BeatFile,

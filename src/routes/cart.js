@@ -109,6 +109,16 @@ cart.post('/:id/addBeat',
     }
   }),
   wrap(async function (req, res) {
+    const beat = await Beat.findById(req.body.beatId, {
+      include: [{model: User}]
+    });
+
+    if (!beat.user.paypalReceiver) {
+      throw new HttpError(422, 'invalid_paypal_receiver', {
+        errorMessage: 'Since producer has not provided proper paypal receiver email, you can\' purchase this beat'
+      });
+    }
+
     try {
         const cartItem = await CartItem.create({
         ...req.cart,
@@ -176,6 +186,7 @@ cart.post('/my/transaction',
       .map(_.property('beat'));
 
     const transaction = await Transaction.create({
+      userId: req.user_id,
       id: sequelize.literal(`'ODY-' || nextval('transactions_id_seq')`),
       type: 'beats_purchase',
       amount: _.sumBy(beats, 'price'),
@@ -198,7 +209,7 @@ cart.post('/my/transaction',
     const payments = [
       {
         currency: 'USD',
-        action: 'Sale',
+        action: 'SALE',
         description: 'ODYOPLUG TAX',
         receiver: config.get('paypal.receiver'),
         id: `${transaction.id}-TAX`,
@@ -213,7 +224,7 @@ cart.post('/my/transaction',
     for (const userId of Object.keys(beatsByUser)) {
       payments.push({
         currency: 'USD',
-        action: 'Sale',
+        action: 'SALE',
         description: beatsByUser[userId][0].user.name,
         receiver: beatsByUser[userId][0].user.paypalReceiver,
         id: `${transaction.id}-${userId}`,
@@ -234,6 +245,13 @@ cart.post('/my/transaction',
       cancelURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
       payments: payments
     });
+
+    transaction.set({
+      payments: payments.length,
+      paypalECToken: expressCheckout.TOKEN
+    });
+
+    await transaction.save();
 
     res.status(200).json({
       url: paypal.checkoutURL(expressCheckout.TOKEN)

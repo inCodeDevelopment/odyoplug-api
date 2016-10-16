@@ -36,6 +36,12 @@ const schemas = {
 			options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
 		},
 		errorMessage: 'Invalid email'
+	},
+	paypalReceiver: {
+		matches: {
+			options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
+		},
+		errorMessage: 'Invalid paypal receiver email'
 	}
 };
 
@@ -450,6 +456,10 @@ users.post('/me',
 			username: {
 				optional: true,
 				...schemas.username
+			},
+			paypalReceiver: {
+				optional: true,
+				...schemas.paypalReceiver
 			}
 		}
 	}),
@@ -461,6 +471,14 @@ users.post('/me',
 		if (req.body.password) {
 			if (await req.user.verifyPassword(req.get('password'))) {
 				await req.user.setPassword(req.body.password);
+			} else {
+				throw new HttpError(403, 'access_denied');
+			}
+		}
+
+		if (req.body.paypalReceiver) {
+			if (await req.user.verifyPassword(req.get('password'))) {
+				req.user.paypalReceiver = req.body.paypalReceiver;
 			} else {
 				throw new HttpError(403, 'access_denied');
 			}

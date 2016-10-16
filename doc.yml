@@ -283,8 +283,10 @@ paths:
                             type: string
                         password:
                             type: string
+                        paypalReceiver:
+                            type: string
                     example:
-                        email: fubar@gmail.com
+                        paypalReceiver: fubar@gmail.com
                         password: catKeyboard
               - in: header
                 name: Password
@@ -552,20 +554,16 @@ paths:
     /cart/my/transaction:
         post:
             tags: [cart, payment, transaction]
-            summary: Get paypal buy now button parameters
-            operationId: cartPaypalBuyNowButton
+            summary: Get paypal express checkout url
+            operationId: cartGetECURL
             responses:
                 '200':
                     description: Success
                     schema:
                         type: object
                         properties:
-                            transactionId:
+                            url:
                                 type: string
-                            action:
-                                type: string
-                            data:
-                                type: object
     /transactions:
         get:
             tags: [transaction]
@@ -586,6 +584,38 @@ paths:
             tags: [transaction]
             summary: Get transaction by id
             operationId: transactionsGetById
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            transaction:
+                                $ref: '#/definitions/Transaction'
+    /transactions/getByPayPalECToken:
+        get:
+            parameters:
+              - in: query
+                name: ecToken
+                required: true
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            transaction:
+                                $ref: '#/definitions/Transaction'
+    /transactions/finalizeByPayPalECToken:
+        post:
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        ecToken:
+                            type: string
             responses:
                 '200':
                     description: Success
@@ -634,7 +664,6 @@ definitions:
         required:
             - id
             - username
-            - email
         properties:
             id:
                 type: number
@@ -642,6 +671,9 @@ definitions:
                 type: string
                 minLength: 1
             email:
+                type: string
+                format: email
+            paypalReceiver:
                 type: string
                 format: email
     BeatFile:
