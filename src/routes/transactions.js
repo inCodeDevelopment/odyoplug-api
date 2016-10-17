@@ -121,7 +121,17 @@ transactions.post('/finalizeByPayPalECToken',
 			}
 		}
 
-		await paypal.doExpressCheckoutPayment(req.body.ecToken, ecInfo.PAYERID, payments);
+		try {
+			await paypal.doExpressCheckoutPayment(req.body.ecToken, ecInfo.PAYERID, payments);
+		} catch (error) {
+			if (error.payload && error.payload.L_ERRORCODE0 === 10486) {
+				throw new HttpError(422, 'refused', {
+					url: paypal.checkoutURL(req.body.ecToken)
+				});
+			} else {
+				throw error;
+			}
+		}
 	}),
 	updateTransactionInfoByPayPalECToken
 );
