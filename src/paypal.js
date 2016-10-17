@@ -2,29 +2,30 @@ import request from 'request-promise';
 import config from 'config';
 import qs from 'querystring';
 import ExtendableError from 'es6-error';
+import _ from 'lodash';
 
 export class PayPalError extends ExtendableError {
 	constructor(payload) {
-		super(payload.L_LONGMESSAGE0 || payload.L_SHORTMESSAGE0 ||'PayPalError');
+		super(payload.L_LONGMESSAGE0 || payload.L_SHORTMESSAGE0 || 'PayPalError');
 		this.payload = payload;
 	}
 }
 
 const authData = {
-  USER: config.get('paypal.nvp.username'),
-  PWD: config.get('paypal.nvp.password'),
-  SIGNATURE: config.get('paypal.nvp.signature')
+	USER: config.get('paypal.nvp.username'),
+	PWD: config.get('paypal.nvp.password'),
+	SIGNATURE: config.get('paypal.nvp.signature')
 };
 
 const sandbox = config.get('paypal.mode') === 'sandbox';
 
 const paypalRequest = request.defaults({
-  uri: sandbox
-    ? 'https://api-3t.sandbox.paypal.com/nvp'
-    : 'https://api-3t.paypal.com/nvp',
-  transform(body) {
-    return qs.parse(body);
-  }
+	uri: sandbox
+		? 'https://api-3t.sandbox.paypal.com/nvp'
+		: 'https://api-3t.paypal.com/nvp',
+	transform(body) {
+		return qs.parse(body);
+	}
 });
 
 function transformResponse(payload) {
@@ -37,7 +38,7 @@ function transformResponse(payload) {
 
 function buildPaymentRequests(payments) {
 	const paymentRequests = {};
-	for (let i=0 ; i<payments.length ; i++) {
+	for (let i = 0; i < payments.length; i++) {
 		const payment = payments[i];
 
 		let itemsAmount = 0;
@@ -46,6 +47,9 @@ function buildPaymentRequests(payments) {
 			itemsAmount += item.amount;
 			taxAmount += item.taxAmount || 0;
 		}
+
+		itemsAmount = _.round(itemsAmount, 2);
+		taxAmount = _.round(taxAmount, 2);
 
 		paymentRequests[`PAYMENTREQUEST_${i}_CURRENCYCODE`] = payment.currency;
 		paymentRequests[`PAYMENTREQUEST_${i}_AMT`] = itemsAmount + taxAmount;
@@ -56,7 +60,8 @@ function buildPaymentRequests(payments) {
 		paymentRequests[`PAYMENTREQUEST_${i}_SELLERPAYPALACCOUNTID`] = payment.receiver;
 		paymentRequests[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`] = payment.id;
 
-		for (let j=0 ; j<payment.items.length ; j++) {
+		for (let j = 0; j < payment.items.length; j++) {
+			paymentRequests[`L_PAYMENTREQUEST_${i}_ITEMCATEGORY${j}`] = 'Digital';
 			paymentRequests[`L_PAYMENTREQUEST_${i}_NAME${j}`] = payment.items[j].name || payment.items[j].id;
 			paymentRequests[`L_PAYMENTREQUEST_${i}_NUMBER${j}`] = payment.items[j].id || payment.items[j].name;
 			paymentRequests[`L_PAYMENTREQUEST_${i}_QTY${j}`] = payment.items[j].qty || 1;
@@ -70,35 +75,34 @@ function buildPaymentRequests(payments) {
 			}
 		}
 	}
-
 	return paymentRequests;
 }
 
 export default {
-  async setExpressCheckout(options) {
-
-    const payload = await paypalRequest({
-      qs: {
-        ...authData,
-        METHOD: 'SetExpressCheckout',
-        VERSION: 204,
-        RETURNURL: options.returnURL,
-        CANCELURL: options.cancelURL,
+	async setExpressCheckout(options) {
+		const payload = await paypalRequest({
+			qs: {
+				...authData,
+				METHOD: 'SetExpressCheckout',
+				VERSION: 204,
+				RETURNURL: options.returnURL,
+				CANCELURL: options.cancelURL,
 				NOSHIPPING: 1,
-        ...buildPaymentRequests(options.payments)
-      }
-    });
+				SOLUTIONTYPE: 'Sole',
+				...buildPaymentRequests(options.payments)
+			}
+		});
 
-	return transformResponse(payload);
-  },
+		return transformResponse(payload);
+	},
 
-  checkoutURL(token) {
-    if (sandbox) {
-      return `https://www.sandbox.paypal.com/checkoutnow?token=${token}`;
-    } else {
-      return `https://www.paypal.com/checkoutnow?token=${token}`;
-    }
-  },
+	checkoutURL(token) {
+		if (sandbox) {
+			return `https://www.sandbox.paypal.com/checkoutnow?token=${token}`;
+		} else {
+			return `https://www.paypal.com/checkoutnow?token=${token}`;
+		}
+	},
 
 	async getExpressCheckoutInfo(ecToken) {
 		const payload = await paypalRequest({

@@ -64,15 +64,12 @@ const updateTransactionInfoByPayPalECToken = wrap(
 
 		const ecInfo = await paypal.getExpressCheckoutInfo(req.body.ecToken);
 
-		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionNotInitiated' || ecInfo.CHECKOUTSTATUS === 'PaymentActionFailed') {
-			transaction.status = 'fail';
-		}
-		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionInProgress') {
-			transaction.status = 'wait';
-		}
-		if (ecInfo.CHECKOUTSTATUS === 'PaymentActionCompleted') {
-			transaction.status = 'success';
-		}
+		transaction.status = ({
+			PaymentActionNotInitiated: 'wait',
+			PaymentActionFailed: 'fail',
+			PaymentActionInProgress: 'wait',
+			PaymentActionCompleted: 'success'
+		})[ecInfo.CHECKOUTSTATUS];
 
 		await Transaction.update({
 			status: transaction.status
