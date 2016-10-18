@@ -218,9 +218,8 @@ CartItem.addScope('with:beats', {
 });
 
 export const Transaction = db.define('transaction', {
-	id: {
-		type: Sequelize.STRING,
-		primaryKey: true
+	tx: {
+		type: Sequelize.STRING
 	},
 	type: {
 		type: Sequelize.ENUM('beats_purchase', 'beats_sell', 'tax'),
@@ -235,6 +234,12 @@ export const Transaction = db.define('transaction', {
 		allowNull: false
 	},
 	paypalECToken: {
+		type: Sequelize.STRING
+	},
+	paypalId: {
+		type: Sequelize.STRING
+	},
+	paypalBuyer: {
 		type: Sequelize.STRING
 	}
 }, {

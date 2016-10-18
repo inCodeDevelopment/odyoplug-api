@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { validate, authorizedOnly } from 'middlewares';
 import { HttpError } from 'HttpError';
-import config from 'config';
 import paypal from 'paypal';
 import _ from 'lodash';
 
-import { Transaction, Beat, BeatFile } from 'db';
+import { Transaction } from 'db';
 
 import { wrap } from './utils';
 
@@ -14,10 +13,31 @@ const transactions = Router();
 transactions.get('/',
 	authorizedOnly,
 	wrap(async function(req, res) {
+		const query = {};
+
+		if (req.query.q) {
+			query.$or = [
+				{tx: {$iLike: `%${req.query.q}%`}},
+				{transactionId: {$iLike: `%${req.query.q}%`}},
+				{paypalBuyer: {$iLike: `%${req.query.q}%`}},
+				{'items.beat.name': {$iLike: `%${req.query.q}%`}},
+
+				{'subTransactions.tx': {$iLike: `%${req.query.q}%`}},
+				{'subTransactions.transactionId': {$iLike: `%${req.query.q}%`}},
+				{'subTransactions.paypalBuyer': {$iLike: `%${req.query.q}%`}},
+				{'subTransactions.items.beat.name': {$iLike: `%${req.query.q}%`}}
+			];
+		}
+
+		if (req.query.type) {
+			query.type = {$in: req.query.type};
+		}
+
 		const transactions = await Transaction
 			.scope('with:subTransactions', 'with:items')
 			.findAll({
 				where: {
+					...query,
 					userId: req.user_id
 				}
 			});
@@ -62,6 +82,10 @@ const updateTransactionInfoByPayPalECToken = wrap(
 			throw new HttpError(404, 'not_found');
 		}
 
+		if (transaction.status === 'success') {
+			res.status(200).json({transaction});
+		}
+
 		const ecInfo = await paypal.getExpressCheckoutInfo(req.body.ecToken);
 
 		transaction.status = ({
@@ -80,9 +104,29 @@ const updateTransactionInfoByPayPalECToken = wrap(
 		});
 		await transaction.save();
 
+		// create sellers transactions
+		if (transaction.previous('status') !== transaction.status && transaction.status === 'success') {
+			const subTransactions = await transaction.getSubTransactions();
+
+			for (const subTransaction of subTransactions) {
+				await Transaction.create({
+					userId: subTransaction.tx.split('-')[2], // @TODO extract to method or virtual
+					tx: subTransaction.tx,
+					type: 'beats_sell',
+					amount: subTransaction.amount,
+					status: 'success',
+					paypalId: _.find(
+						ecInfo.paymentRequests,
+						{id: subTransaction.tx}
+					).transactionId,
+					paypalBuyer: ecInfo.BUYER
+				});
+			}
+		}
+
 		await transaction.reload();
 
-		res.status(200).json({transaction})
+		res.status(200).json({transaction});
 	}
 );
 

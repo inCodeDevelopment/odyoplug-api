@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import {Router} from 'express';
 import config from 'config';
-import { authorizedOnly, validate } from 'middlewares';
+import {authorizedOnly, validate} from 'middlewares';
 import sequelize from 'sequelize';
 import _ from 'lodash';
 
@@ -9,10 +9,10 @@ import {
 	storage as beatFileStorage
 } from 'multers/beatFile';
 
-import { Beat, BeatFile } from 'db';
-import { HttpError } from 'HttpError';
+import {Beat, BeatFile} from 'db';
+import {HttpError} from 'HttpError';
 
-import { wrap } from './utils';
+import {wrap} from './utils';
 
 const inputBeatSchema = {
 	name: {
@@ -66,9 +66,9 @@ function catchBeatError(err) {
 const beats = Router();
 
 beats.post('/',
-  authorizedOnly,
-  validate({
-    body: {
+	authorizedOnly,
+	validate({
+		body: {
 			...inputBeatSchema,
 			name: {
 				...inputBeatSchema.name,
@@ -91,24 +91,24 @@ beats.post('/',
 				notEmpty: true
 			}
 		}
-  }),
-  wrap(async function(req, res) {
-    const beat = await Beat.create({
-      ...req.body,
-      userId: req.user_id
-    }).catch(catchBeatError);
+	}),
+	wrap(async function (req, res) {
+		const beat = await Beat.create({
+			...req.body,
+			userId: req.user_id
+		}).catch(catchBeatError);
 
-    res.send({
-  		beat: {
+		res.send({
+			beat: {
 				...beat.toJSON(),
 				file: await beat.getFile()
 			}
-    });
-  })
+		});
+	})
 );
 
 beats.get('/user/:userId',
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const beats = await Beat.scope('with:file').findAll({
 			where: {
 				userId: req.params.userId
@@ -134,7 +134,7 @@ beats.get('/search',
 			}
 		}
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const query = {
 			name: {
 				$iLike: `%${req.query.q}%`
@@ -175,19 +175,19 @@ beats.get('/search',
 );
 
 beats.post('/files',
-  authorizedOnly,
-  beatFileUploader.single('beatFile'),
+	authorizedOnly,
+	beatFileUploader.single('beatFile'),
 	beatFileStorage.getFileInfo,
-  wrap(async function(req, res) {
-    const beatFile = await BeatFile.create({
-      url: `/uploads/beats/${req.file.filename}`,
-      duration: req.file.duration
-    });
+	wrap(async function (req, res) {
+		const beatFile = await BeatFile.create({
+			url: `/uploads/beats/${req.file.filename}`,
+			duration: req.file.duration
+		});
 
-    res.status(200).json({
-      file: beatFile
-    })
-  })
+		res.status(200).json({
+			file: beatFile
+		})
+	})
 );
 
 beats.post('/:id(\\d+)',
@@ -195,7 +195,7 @@ beats.post('/:id(\\d+)',
 	validate({
 		body: inputBeatSchema
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const [updated] = await Beat.update(req.body, {
 			where: {
 				userId: req.user_id,

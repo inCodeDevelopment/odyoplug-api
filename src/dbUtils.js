@@ -23,7 +23,7 @@ export async function createSequences() {
 	`);
 
 	await db.query(`
-		CREATE SEQUENCE public.transactions_id_seq
+		CREATE SEQUENCE public.transactions_tx_seq
 			INCREMENT 1
 			MINVALUE 1
 			MAXVALUE 9223372036854775807

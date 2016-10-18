@@ -105,7 +105,7 @@ export default {
 	},
 
 	async getExpressCheckoutInfo(ecToken) {
-		const payload = await paypalRequest({
+		const rawPayload = await paypalRequest({
 			qs: {
 				...authData,
 				METHOD: 'GetExpressCheckoutDetails',
@@ -114,7 +114,18 @@ export default {
 			}
 		});
 
-		return transformResponse(payload);
+		const payload = transformResponse(rawPayload);
+
+		payload.paymentRequests = [];
+
+		for (let i=0 ; payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`] ; i++) {
+			payload.push({
+				id: payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`],
+				transactionId: payload[`PAYMENTREQUEST_${i}_TRANSACTIONID`]
+			});
+		}
+
+		return payload;
 	},
 	async doExpressCheckoutPayment(ecToken, payerId, paymentRequests) {
 		const payload = await paypalRequest({

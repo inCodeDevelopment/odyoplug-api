@@ -569,6 +569,20 @@ paths:
             tags: [transaction]
             summary: Get list of user transactions
             operationId: transactionsGet
+            parameters:
+              - in: query
+                name: type
+                type: array
+                collectionFormat: multi
+                items:
+                    type: string
+                    enum:
+                       - beats_purchase
+                       - beat_sell
+                       - tax
+              - in: query
+                name: q
+                type: string
             responses:
                 '200':
                     description: Success
@@ -736,16 +750,19 @@ definitions:
                 type: number
             name:
                 type: string
+    TransactionType:
+        type: string
+        enum:
+           - beats_purchase
+           - beat_sell
+           - tax
     Transaction:
         type: object
         properties:
             id:
                 type: string
             type:
-                type: string
-                enum:
-                    - beats_purchase
-                    - beat_sell
+                 $ref: '#/definitions/TransactionType'
             amount:
                 type: number
             status:
@@ -754,10 +771,25 @@ definitions:
                     - wait
                     - success
                     - fail
-            beats:
+            paypalId:
+                type: string
+            paypalBuyer:
+                type: string
+            paypalECToken:
+                type: string
+            items:
                 type: array
                 items:
-                    $ref: '#/definitions/Beat'
+                    type: object
+                    required: [type, price]
+                    properties:
+                        type:
+                            type: string
+                            enum: [beat]
+                        price:
+                            type: number
+                        beat:
+                            $ref: '#/definitions/Beat'
     GenericError:
         type: object
         properties:

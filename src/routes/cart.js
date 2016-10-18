@@ -187,7 +187,7 @@ cart.post('/my/transaction',
 
 		const transaction = await Transaction.create({
 			userId: req.user_id,
-			id: sequelize.literal(`'ODY-' || nextval('transactions_id_seq')`),
+			tx: sequelize.literal(`'ODY-' || nextval('transactions_tx_seq')`),
 			type: 'beats_purchase',
 			amount: _.round(_.sumBy(beats, 'price'), 2),
 			status: 'wait'
@@ -208,7 +208,7 @@ cart.post('/my/transaction',
 				action: 'SALE',
 				description: 'ODYOPLUG TAX',
 				receiver: config.get('paypal.receiver'),
-				id: `${transaction.id}-TAX`,
+				tx: `${transaction.tx}-TAX`,
 				items: [{
 					id: 'ODYOPLUG-TAX',
 					amount: taxAmount
@@ -217,7 +217,7 @@ cart.post('/my/transaction',
 		];
 		await transaction.createSubTransaction({
 			userId: req.user_id,
-			id: `${transaction.id}-TAX`,
+			tx: `${transaction.tx}-TAX`,
 			type: 'tax',
 			amount: taxAmount,
 			status: 'wait'
@@ -242,7 +242,7 @@ cart.post('/my/transaction',
 
 			const subTransactions = await transaction.createSubTransaction({
 				userId: req.user_id,
-				id: `${transaction.id}-${userId}`,
+				tx: `${transaction.tx}-${userId}`,
 				type: 'beats_purchase',
 				amount: _.sumBy(beatsByUser[userId], beat => priceAT(beat.price)),
 				status: 'wait'
