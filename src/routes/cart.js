@@ -208,7 +208,7 @@ cart.post('/my/transaction',
 				action: 'SALE',
 				description: 'ODYOPLUG TAX',
 				receiver: config.get('paypal.receiver'),
-				tx: `${transaction.tx}-TAX`,
+				id: `${transaction.tx}-TAX`,
 				items: [{
 					id: 'ODYOPLUG-TAX',
 					amount: taxAmount
@@ -230,7 +230,7 @@ cart.post('/my/transaction',
 				action: 'SALE',
 				description: beatsByUser[userId][0].user.name,
 				receiver: beatsByUser[userId][0].user.paypalReceiver,
-				id: `${transaction.id}-${userId}`,
+				id: `${transaction.tx}-${userId}`,
 				items: beatsByUser[userId].map(
 					beat => ({
 						name: beat.name,
@@ -245,7 +245,8 @@ cart.post('/my/transaction',
 				tx: `${transaction.tx}-${userId}`,
 				type: 'beats_purchase',
 				amount: _.sumBy(beatsByUser[userId], beat => priceAT(beat.price)),
-				status: 'wait'
+				status: 'wait',
+				paypalSeller: beatsByUser[userId][0].user.paypalReceiver
 			});
 
 			for (const beat of beatsByUser[userId]) {

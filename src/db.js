@@ -241,6 +241,9 @@ export const Transaction = db.define('transaction', {
 	},
 	paypalBuyer: {
 		type: Sequelize.STRING
+	},
+	paypalSeller: {
+		type: Sequelize.STRING
 	}
 }, {
 	defaultScope: {

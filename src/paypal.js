@@ -119,7 +119,7 @@ export default {
 		payload.paymentRequests = [];
 
 		for (let i=0 ; payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`] ; i++) {
-			payload.push({
+			payload.paymentRequests.push({
 				id: payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`],
 				transactionId: payload[`PAYMENTREQUEST_${i}_TRANSACTIONID`]
 			});

@@ -20,11 +20,13 @@ transactions.get('/',
 				{tx: {$iLike: `%${req.query.q}%`}},
 				{transactionId: {$iLike: `%${req.query.q}%`}},
 				{paypalBuyer: {$iLike: `%${req.query.q}%`}},
+				{paypalSeller: {$iLike: `%${req.query.q}%`}},
 				{'items.beat.name': {$iLike: `%${req.query.q}%`}},
 
 				{'subTransactions.tx': {$iLike: `%${req.query.q}%`}},
 				{'subTransactions.transactionId': {$iLike: `%${req.query.q}%`}},
 				{'subTransactions.paypalBuyer': {$iLike: `%${req.query.q}%`}},
+				{'subTransactions.paypalSeller': {$iLike: `%${req.query.q}%`}},
 				{'subTransactions.items.beat.name': {$iLike: `%${req.query.q}%`}}
 			];
 		}
@@ -109,18 +111,22 @@ const updateTransactionInfoByPayPalECToken = wrap(
 			const subTransactions = await transaction.getSubTransactions();
 
 			for (const subTransaction of subTransactions) {
+				const paypalTransactionId = _.find(
+					ecInfo.paymentRequests,
+					{id: subTransaction.tx}
+				).transactionId;
 				await Transaction.create({
 					userId: subTransaction.tx.split('-')[2], // @TODO extract to method or virtual
 					tx: subTransaction.tx,
 					type: 'beats_sell',
 					amount: subTransaction.amount,
 					status: 'success',
-					paypalId: _.find(
-						ecInfo.paymentRequests,
-						{id: subTransaction.tx}
-					).transactionId,
+					paypalId: paypalTransactionId,
 					paypalBuyer: ecInfo.BUYER
 				});
+
+				subTransaction.paypalId = paypalTransactionId;
+				await subTransaction.save();
 			}
 		}
 
