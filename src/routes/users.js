@@ -12,7 +12,6 @@ import {HttpError} from 'HttpError';
 import {wrap, catchSequelizeConstraintErrors} from './utils';
 import _ from 'lodash';
 import url from 'url';
-import uuid from 'node-uuid';
 import mailer from 'mailer';
 
 const userFields = {
@@ -75,14 +74,12 @@ users.post('/signup',
 		).only(['username', 'email', 'password'])
 	}),
 	wrap(async function (req, res) {
-		const user = User.build({
-			email: req.body.email,
-			username: req.body.username,
-			active: false,
-			activationToken: uuid.v4()
-		});
+		const user = await User.buildFromEmailUsernamePassword(
+			req.body.email,
+			req.body.username,
+			req.body.password
+		);
 
-		await user.setPassword(req.body.password);
 		await user.save().catch(catchUserConstraintErrors);
 
 		await mailer.sendUserActivation(user, {
@@ -106,8 +103,7 @@ users.post('/requestActivationEmail',
 			throw HttpError.invalidInput('login', 'User not found');
 		}
 
-		user.activationToken = uuid.v4();
-		await user.save();
+		await user.resetActivationToken();
 
 		await mailer.sendUserActivation(user, {
 			baseURL: req.baseURL
@@ -130,8 +126,7 @@ users.post('/requestPasswordRestoreEmail',
 			throw HttpError.invalidInput('login', 'User not found');
 		}
 
-		user.passwordRestoreToken = uuid.v4();
-		await user.save();
+		await user.resetPasswordRestoreToken();
 
 		await mailer.sendRestorePassword(user, {
 			baseURL: req.baseURL
@@ -149,21 +144,14 @@ users.post('/activate',
 		}, ['email', 'activationToken'])
 	}),
 	wrap(async function (req, res) {
-		const user = await User.findOne({
-			where: {
-				email: req.body.email,
-				activationToken: req.body.activationToken
-			}
-		});
+		const user = await User.activateByEmailToken(
+			req.body.email,
+			req.body.activationToken
+		);
 
 		if (!user) {
 			throw new HttpError(400, 'invalid_activation_token');
 		}
-
-		await user.update({
-			active: true,
-			activationToken: null
-		});
 
 		res.status(200).json({
 			status: 'activated',
@@ -183,24 +171,19 @@ users.post('/changePassword',
 		}, ['email', 'passwordRestoreToken', 'password'])
 	}),
 	wrap(async function (req, res) {
-		const [updated] = await User.update({
-			active: true,
-			passwordRestoreToken: null,
-			hash: await User.hashPassword(req.body.password)
-		}, {
-			where: {
-				email: req.body.email,
-				passwordRestoreToken: req.body.passwordRestoreToken
-			}
-		});
+		const updated = await User.updatePasswordByEmailToken(
+			req.body.password,
+			req.body.email,
+			req.body.passwordRestoreToken
+		);
 
-		if (updated) {
-			res.status(200).json({
-				status: 'updated'
-			});
-		} else {
+		if (!updated) {
 			throw new HttpError(400, 'invalid_password_restore_token');
 		}
+
+		res.status(200).json({
+			status: 'updated'
+		});
 	})
 );
 
@@ -212,9 +195,9 @@ users.post('/signin',
 		}, ['login', 'password'])
 	}),
 	wrap(async function (req, res) {
-		const user = await User.findByLogin(req.body.login);
+		const user = await User.findByLoginPassword(req.body.login, req.body.password);
 
-		if (user && await user.verifyPassword(req.body.password)) {
+		if (user) {
 			if (!user.active) {
 				throw new HttpError(404, 'user_not_active', {
 					message: "Account is not activated, please check your inbox"
@@ -248,41 +231,21 @@ function storeAuthInfo(req, res, next) {
 		req.session.accessToken = req.query.accessToken;
 	}
 
-	req.session.referer = req.get('Referrer');
+	req.session.baseURL = req.baseURL;
 	next();
 }
 
 function passportCallbackHandler(provider) {
 	return (req, res, next) => {
-		let failureCallback;
-
-		if (config.get('socialAuth.resolveCallbackFromReferer')) {
-			failureCallback = url.resolve(
-				req.session.referer || '',
-				config.get('socialAuth.callbackFailure')
-			);
-		} else {
-			failureCallback = config.get('socialAuth.callbackFailure');
-		}
-
 		passport.authenticate(provider, {
-			failureRedirect: failureCallback,
+			failureRedirect: url.resolve(req.session.baseURL, config.get('socialAuth.callbackFailure')),
 			session: false
 		})(req, res, next);
 	}
 }
 
 function redirectUser(req, res) {
-	let callback;
-
-	if (config.get('socialAuth.resolveCallbackFromReferer')) {
-		callback = url.resolve(
-			req.session.referer || '',
-			config.get('socialAuth.callback')
-		);
-	} else {
-		callback = config.get('socialAuth.callback');
-	}
+	const callback = url.resolve(req.session.baseURL, config.get('socialAuth.callback'));
 
 	res.redirect(callback + '?' + qs.stringify({
 			status: 'authroized',

@@ -2,6 +2,7 @@ import Sequelize from 'sequelize';
 import dbConnection from 'dbConnection';
 import bcrypt from 'bcrypt-as-promised';
 import initializer from './initializer';
+import uuid from 'node-uuid';
 
 export const User = dbConnection.define('user', {
 	email: {
@@ -57,6 +58,58 @@ export const User = dbConnection.define('user', {
 			return this.findOne({
 				where: query
 			});
+		},
+		async findByLoginPassword(login, password) {
+			const user = await this.findByLogin(login);
+
+			if (user && await user.verifyPassword(password)) {
+				return user;
+			} else {
+				return null;
+			}
+		},
+		async buildFromEmailUsernamePassword(email, username, password) {
+			const user = this.build({
+				email: email,
+				username: username,
+				active: false,
+				activationToken: uuid.v4()
+			});
+
+			await user.setPassword(password);
+
+			return user;
+		},
+		async activateByEmailToken(email, activationToken) {
+			const user = await this.findOne({
+				where: {email, activationToken}
+			});
+
+			if (!user) {
+				return null;
+			}
+
+			await user.update({
+				active: true,
+				activationToken: null
+			});
+
+			return user;
+		},
+		async updatePasswordByEmailToken(password, email, passwordRestoreToken) {
+			const [updated] = await this.update({
+					active: true,
+					passwordRestoreToken: null,
+					hash: await bcrypt.hash(password, 8)
+				},
+				{
+					where: {
+						email: email,
+						passwordRestoreToken: passwordRestoreToken
+					}
+				});
+
+			return updated > 0;
 		}
 	},
 	instanceMethods: {
@@ -73,6 +126,14 @@ export const User = dbConnection.define('user', {
 				}
 				throw err;
 			}
+		},
+		resetActivationToken() {
+			this.activationToken = uuid.v4();
+			return this.save();
+		},
+		resetPasswordRestoreToken() {
+			this.passwordRestoreToken = uuid.v4();
+			return this.save();
 		},
 		toJSON() {
 			const values = this.get({plain: true});
