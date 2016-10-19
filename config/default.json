@@ -10,6 +10,8 @@
 		"secret": "iuh48yq3ycg0duh03uch048h034c031c"
 	},
 	"cookieSessionSecret": "dij4f02hg-24g95gf24f2f",
+	"resolveBaseURLFromReferrer": true,
+	"baseURL": "http://localhost:3000/",
 	"baseUrl": "http://localhost:3000",
 	"socialAuth": {
 		"resolveCallbackFromReferer": false,
@@ -29,7 +31,11 @@
 		}
 	},
 	"beatFileStorage": {
-		"allowedMimeTypes": ["audio/mpeg", "audio/vnd.wave", "audio/mp3"],
+		"allowedMimeTypes": [
+			"audio/mpeg",
+			"audio/vnd.wave",
+			"audio/mp3"
+		],
 		"destination": "/tmp"
 	},
 	"mailer": {
@@ -54,5 +60,9 @@
 			"days": 7
 		}
 	},
-	"corsWhitelist": ["http://odyoplug.local", "http://odyoplug.demo.incode-systems.com", "http://odyoplug.local:8080"]
+	"corsWhitelist": [
+		"http://odyoplug.local",
+		"http://odyoplug.demo.incode-systems.com",
+		"http://odyoplug.local:8080"
+	]
 }

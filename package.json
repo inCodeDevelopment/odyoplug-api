@@ -22,6 +22,7 @@
     "cookie-session": "^2.0.0-alpha.1",
     "cors": "^2.8.1",
     "dataloader": "^1.2.0",
+    "date.js": "^0.3.1",
     "es6-error": "^3.1.0",
     "express": "^4.14.0",
     "express-validator": "^2.20.10",

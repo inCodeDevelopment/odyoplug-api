@@ -2,9 +2,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import routes from 'routes';
 import uploads from 'uploads';
-import { authorization, errorHandler } from 'middlewares';
+import {authorization, errorHandler, resolveBaseURL} from 'middlewares';
 import expressValidator from 'express-validator';
-import { ready as dbReady } from 'db';
+import {ready as dbReady} from 'db';
 import initPassportStrategies from 'passportStrategies';
 import cors from 'cors';
 import config from 'config';
@@ -16,16 +16,17 @@ const app = express();
 var whitelist = config.get('corsWhitelist');
 
 app.use(
-  cors({
-    origin: whitelist,
-    credentials: true
-  })
+	cors({
+		origin: whitelist,
+		credentials: true
+	})
 );
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(expressValidator());
 
 app.use(authorization);
+app.use(resolveBaseURL);
 
 app.use('/api', routes);
 app.use('/uploads', uploads);

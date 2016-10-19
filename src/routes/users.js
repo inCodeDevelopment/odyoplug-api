@@ -1,36 +1,21 @@
-import { Router } from 'express';
-import { authorizedOnly, validate } from 'middlewares';
+import {Router} from 'express';
+import {authorizedOnly, validate} from 'middlewares';
 import cookieSession from 'cookie-session';
 import config from 'config';
 import passport from 'passport';
 import qs from 'querystring';
 
-import { User } from 'db';
+import {User} from 'db';
 
-import { sign as signToken } from 'token';
-import { HttpError } from 'HttpError';
-import { wrap } from './utils';
+import {sign as signToken} from 'token';
+import {HttpError} from 'HttpError';
+import {wrap, catchSequelizeConstraintErrors} from './utils';
 import _ from 'lodash';
 import url from 'url';
-import sequelize from 'sequelize';
 import uuid from 'node-uuid';
 import mailer from 'mailer';
 
-class UserByLoginNotFoundError extends HttpError {
-	constructor(login) {
-		super(400, 'invalid_input', {
-			errors: {
-				login: {
-					param: 'login',
-					msg: 'User not found',
-					value: login
-				}
-			}
-		});
-	}
-}
-
-const schemas = {
+const userFields = {
 	username: {
 		matches: {
 			options: ['^[a-zA-Z0-9._]+$'],
@@ -56,69 +41,40 @@ const schemas = {
 			options: ['^[a-zA-Z0-9_\.\+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-\.]+$']
 		},
 		errorMessage: 'Invalid paypal receiver email'
+	},
+	activationToken: {
+		errorMessage: 'Invalid activation token',
+	},
+	passwordRestoreToken: {
+		errorMessage: 'Invalid password restore token',
+	},
+	login: {
+		errorMessage: 'Invalid login'
 	}
 };
 
-async function catchUniqueConstraintError(error) {
-		if (
-			error instanceof sequelize.UniqueConstraintError &&
-			_.some(error.errors, _.matches({
-				type: 'unique violation',
-				path: 'email'
-			}))
-		) {
-			throw new HttpError(400, 'invalid_input', {
-				errors: {
-					email: {
-						param: 'email',
-						msg: 'Email is already in use',
-						value: _.find(error.errors, {path: 'email'}).value
-					}
-				}
-			});
-		}
+const inputUserSchema = {
+	username: userFields.username,
+	password: userFields.password,
+	email: userFields.email,
+	paypalReceiver: userFields.paypalReceiver
+};
 
-		if (
-			error instanceof sequelize.UniqueConstraintError &&
-			_.some(error.errors, _.matches({
-				type: 'unique violation',
-				path: 'username'
-			}))
-		) {
-			throw new HttpError(400, 'invalid_input', {
-				errors: {
-					username: {
-						param: 'username',
-						msg: 'Username is taken',
-						value: _.find(error.errors, {path: 'username'}).value
-					}
-				}
-			})
-		}
-
-		throw error;
-}
+const catchUserConstraintErrors = catchSequelizeConstraintErrors({
+	'unique:email': 'Email is already in use',
+	'unique:username': 'Username is taken'
+});
 
 const users = Router();
 
 users.post('/signup',
 	validate({
-		body: {
-			username: {
-				...schemas.username,
-				notEmpty: true
-			},
-			email: {
-				...schemas.email,
-				notEmpty: true
-			},
-			password: {
-				...schemas.password,
-				notEmpty: true
-			}
-		}
+		body: validate.notEmpty(
+			inputUserSchema,
+			['username', 'email', 'password']
+		).only(['username', 'email', 'password'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const user = User.build({
 			email: req.body.email,
 			username: req.body.username,
@@ -127,14 +83,10 @@ users.post('/signup',
 		});
 
 		await user.setPassword(req.body.password);
-		await user.save().catch(catchUniqueConstraintError);
+		await user.save().catch(catchUserConstraintErrors);
 
-		const baseUrl = req.get('Referer') || config.get('baseUrl');
-		await mailer.send('user-activation', req.body.email, {
-			url: url.resolve(baseUrl, '/auth/registration/activate'),
-			activationToken: user.activationToken,
-			email: user.email,
-			username: user.username
+		await mailer.sendUserActivation(user, {
+			baseURL: req.baseURL
 		});
 
 		res.status(201).json({user});
@@ -143,32 +95,22 @@ users.post('/signup',
 
 users.post('/requestActivationEmail',
 	validate({
-		body: {
-			login: {
-				notEmpty: true,
-				errorMessage: 'Invalid login'
-			}
-		}
+		body: validate.notEmpty({
+			login: userFields.login
+		}, ['login'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const user = await User.findByLogin(req.body.login);
 
 		if (!user) {
-			throw new UserByLoginNotFoundError(req.body.login);
+			throw HttpError.invalidInput('login', 'User not found');
 		}
 
-		const activationToken = uuid.v4();
+		user.activationToken = uuid.v4();
+		await user.save();
 
-		await user.update({
-			activationToken: activationToken
-		});
-
-		const baseUrl = req.get('Referrer') || config.get('baseUrl');
-		await mailer.send('user-activation', user.email, {
-			url: url.resolve(baseUrl, '/auth/registration/activate'),
-			activationToken: activationToken,
-			email: user.email,
-			username: user.username
+		await mailer.sendUserActivation(user, {
+			baseURL: req.baseURL
 		});
 
 		res.status(200).json({status: 'sent'});
@@ -177,31 +119,22 @@ users.post('/requestActivationEmail',
 
 users.post('/requestPasswordRestoreEmail',
 	validate({
-		body: {
-			login: {
-				notEmpty: true,
-				errorMessage: 'Invalid login'
-			}
-		}
+		body: validate.notEmpty({
+			login: userFields.login
+		}, ['login'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const user = await User.findByLogin(req.body.login);
 
 		if (!user) {
-			throw new UserByLoginNotFoundError(req.body.login);
+			throw HttpError.invalidInput('login', 'User not found');
 		}
 
-		const passwordRestoreToken = uuid.v4();
-		await user.update({
-			passwordRestoreToken: passwordRestoreToken
-		});
+		user.passwordRestoreToken = uuid.v4();
+		await user.save();
 
-		const baseUrl = req.get('Referrer') || config.get('baseUrl');
-		await mailer.send('restore-password', user.email, {
-			url: url.resolve(baseUrl, '/auth/forgot/password'),
-			passwordRestoreToken: passwordRestoreToken,
-			email: user.email,
-			username: user.username
+		await mailer.sendRestorePassword(user, {
+			baseURL: req.baseURL
 		});
 
 		res.status(200).json({status: 'sent'});
@@ -210,18 +143,12 @@ users.post('/requestPasswordRestoreEmail',
 
 users.post('/activate',
 	validate({
-		body: {
-			email: {
-				...schemas.email,
-				notEmpty: true
-			},
-			activationToken: {
-				errorMessage: 'Invalid activation token',
-				notEmpty: true
-			}
-		}
+		body: validate.notEmpty({
+			email: userFields.email,
+			activationToken: userFields.activationToken
+		}, ['email', 'activationToken'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const user = await User.findOne({
 			where: {
 				email: req.body.email,
@@ -229,47 +156,38 @@ users.post('/activate',
 			}
 		});
 
-		if (user) {
-			await user.update({
-				active: true,
-				activationToken: null
-			})
-
-			res.status(200).json({
-				status: 'activated',
-				access_token: signToken({
-					user_id: user.id
-				})
-			});
-		} else {
+		if (!user) {
 			throw new HttpError(400, 'invalid_activation_token');
 		}
+
+		await user.update({
+			active: true,
+			activationToken: null
+		});
+
+		res.status(200).json({
+			status: 'activated',
+			access_token: signToken({
+				user_id: user.id
+			})
+		});
 	})
 );
 
 users.post('/changePassword',
 	validate({
-		body: {
-			email: {
-				...schemas.email,
-				notEmpty: true
-			},
-			passwordRestoreToken: {
-				errorMessage: 'Invalid password restore token',
-				notEmpty: true
-			},
-			password: {
-				...schemas.password,
-				notEmpty: true
-			}
-		}
+		body: validate.notEmpty({
+			email: userFields.email,
+			passwordRestoreToken: userFields.passwordRestoreToken,
+			password: userFields.password
+		}, ['email', 'passwordRestoreToken', 'password'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const [updated] = await User.update({
 			active: true,
 			passwordRestoreToken: null,
 			hash: await User.hashPassword(req.body.password)
-		},{
+		}, {
 			where: {
 				email: req.body.email,
 				passwordRestoreToken: req.body.passwordRestoreToken
@@ -288,18 +206,12 @@ users.post('/changePassword',
 
 users.post('/signin',
 	validate({
-		body: {
-			login: {
-				notEmpty: true,
-				errorMessage: 'Invalid login'
-			},
-			password: {
-				notEmpty: true,
-				errorMessage: 'Invalid password'
-			}
-		}
+		body: validate.notEmpty({
+			login: userFields.login,
+			password: userFields.password
+		}, ['login', 'password'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const user = await User.findByLogin(req.body.login);
 
 		if (user && await user.verifyPassword(req.body.password)) {
@@ -373,9 +285,9 @@ function redirectUser(req, res) {
 	}
 
 	res.redirect(callback + '?' + qs.stringify({
-		status: 'authroized',
-		access_token: req.user.access_token
-	}));
+			status: 'authroized',
+			access_token: req.user.access_token
+		}));
 }
 
 // Facebook
@@ -418,7 +330,7 @@ users.get('/signin/google/callback',
 
 users.get('/me',
 	authorizedOnly,
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		res.status(200).json({
 			user: req.user
 		});
@@ -428,28 +340,23 @@ users.get('/me',
 users.post('/me',
 	authorizedOnly,
 	validate({
-		body: {
-			password: {
-				optional: true,
-				...schemas.password
-			},
-			username: {
-				optional: true,
-				...schemas.username
-			},
-			paypalReceiver: {
-				optional: true,
-				...schemas.paypalReceiver
-			}
-		}
+		body: validate
+			.only(inputUserSchema, ['password', 'username', 'paypalReceiver'])
+			.optional(['password', 'username', 'paypalReceiver'])
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		req.user.set(
 			_.pick(req.body, ['username'])
 		);
 
+		if (req.get('password')) {
+			req.passwordVerified = await req.user.verifyPassword(req.get('password'));
+		} else {
+			req.passwordVerified = false;
+		}
+
 		if (req.body.password) {
-			if (await req.user.verifyPassword(req.get('password'))) {
+			if (req.passwordVerified) {
 				await req.user.setPassword(req.body.password);
 			} else {
 				throw new HttpError(403, 'access_denied');
@@ -457,14 +364,14 @@ users.post('/me',
 		}
 
 		if (req.body.paypalReceiver) {
-			if (await req.user.verifyPassword(req.get('password'))) {
+			if (req.passwordVerified) {
 				req.user.paypalReceiver = req.body.paypalReceiver;
 			} else {
 				throw new HttpError(403, 'access_denied');
 			}
 		}
 
-		await req.user.save().catch(catchUniqueConstraintError);
+		await req.user.save().catch(catchUserConstraintErrors);
 
 		res.status(200).json({
 			user: req.user

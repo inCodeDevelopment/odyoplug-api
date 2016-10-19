@@ -3,11 +3,9 @@ import sequelize from 'sequelize';
 import {validate, authorizedOnly} from 'middlewares';
 import uuid from 'node-uuid';
 import {wrap} from './utils';
-import {CartItem, Beat, BeatFile, Transaction, User} from 'db';
+import {CartItem, Beat, User} from 'db';
 import _ from 'lodash';
-import url from 'url';
-import config from 'config';
-import paypal from 'paypal';
+import {HttpError} from 'HttpError';
 
 const cart = Router();
 
@@ -31,10 +29,6 @@ cart.post('/guest', function (req, res) {
 
 cart.use('/:id',
 	(req, res, next) => {
-		if (['ipn', 'status', 'callback'].includes(req.params.id)) {
-			return next();
-		}
-
 		if (req.params.id !== 'my') {
 			validate({
 				params: {
@@ -168,115 +162,6 @@ cart.post('/:id/clear',
 		});
 	}),
 	returnCart
-);
-
-cart.post('/my/transaction',
-	wrap(async function (req, res) {
-		const beats = await CartItem
-			.findAll({
-				where: req.cart,
-				include: [{
-					model: Beat,
-					include: [
-						{model: User},
-						{model: BeatFile, as: 'file'}
-					]
-				}]
-			})
-			.map(_.property('beat'));
-
-		const transaction = await Transaction.create({
-			userId: req.user_id,
-			tx: sequelize.literal(`'ODY-' || nextval('transactions_tx_seq')`),
-			type: 'beats_purchase',
-			amount: _.round(_.sumBy(beats, 'price'), 2),
-			status: 'wait'
-		});
-
-		function tax(price) {
-			return _.round(price * 0.1, 2);
-		}
-
-		function priceAT(price) {
-			return _.round(price - tax(price), 2);
-		}
-
-		const taxAmount = _.round(_.sumBy(beats, beat => tax(beat.price)), 2);
-		const payments = [
-			{
-				currency: 'USD',
-				action: 'SALE',
-				description: 'ODYOPLUG TAX',
-				receiver: config.get('paypal.receiver'),
-				id: `${transaction.tx}-TAX`,
-				items: [{
-					id: 'ODYOPLUG-TAX',
-					amount: taxAmount
-				}]
-			}
-		];
-		await transaction.createSubTransaction({
-			userId: req.user_id,
-			tx: `${transaction.tx}-TAX`,
-			type: 'tax',
-			amount: taxAmount,
-			status: 'wait'
-		});
-
-		const beatsByUser = _.groupBy(beats, 'userId');
-		for (const userId of Object.keys(beatsByUser)) {
-			payments.push({
-				currency: 'USD',
-				action: 'SALE',
-				description: beatsByUser[userId][0].user.name,
-				receiver: beatsByUser[userId][0].user.paypalReceiver,
-				id: `${transaction.tx}-${userId}`,
-				items: beatsByUser[userId].map(
-					beat => ({
-						name: beat.name,
-						id: `BEAT-${beat.id}`,
-						amount: priceAT(beat.price)
-					})
-				)
-			});
-
-			const subTransactions = await transaction.createSubTransaction({
-				userId: req.user_id,
-				tx: `${transaction.tx}-${userId}`,
-				type: 'beats_purchase',
-				amount: _.sumBy(beatsByUser[userId], beat => priceAT(beat.price)),
-				status: 'wait',
-				paypalSeller: beatsByUser[userId][0].user.paypalReceiver
-			});
-
-			for (const beat of beatsByUser[userId]) {
-				await subTransactions.createItem({
-					price: beat.price,
-					type: 'beat',
-					beatId: beat.id
-				});
-			}
-		}
-
-		const baseURL = req.get('Referer') || config.baseUrl;
-
-		const expressCheckout = await paypal.setExpressCheckout({
-			returnURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
-			cancelURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
-			payments: payments
-		});
-
-		transaction.set({
-			payments: payments.length,
-			paypalECToken: expressCheckout.TOKEN
-		});
-
-		await transaction.save();
-
-		res.status(200).json({
-			url: paypal.checkoutURL(expressCheckout.TOKEN)
-		});
-	})
 );
 
 export default cart;

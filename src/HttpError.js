@@ -7,3 +7,14 @@ export class HttpError extends ExtendableError {
 		this.payload = payload;
 	}
 }
+
+HttpError.invalidInput = function(field, msg, value) {
+	return new HttpError(400, 'invalid_input', {
+		errors: {
+			[field]: {
+				msg: msg,
+				value: value
+			}
+		}
+	});
+};

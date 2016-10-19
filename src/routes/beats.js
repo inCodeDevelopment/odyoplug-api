@@ -1,8 +1,8 @@
 import {Router} from 'express';
 import config from 'config';
 import {authorizedOnly, validate} from 'middlewares';
-import sequelize from 'sequelize';
 import _ from 'lodash';
+import date from 'date.js';
 
 import {
 	uploader as beatFileUploader,
@@ -12,7 +12,7 @@ import {
 import {Beat, BeatFile} from 'db';
 import {HttpError} from 'HttpError';
 
-import {wrap} from './utils';
+import {wrap, catchSequelizeConstraintErrors} from './utils';
 
 const inputBeatSchema = {
 	name: {
@@ -32,88 +32,42 @@ const inputBeatSchema = {
 	}
 };
 
-function catchBeatError(err) {
-	if (err instanceof sequelize.ForeignKeyConstraintError) {
-		const fKey = err.original.constraint.split('_')[1];
-
-		throw new HttpError(400, 'invalid_input', {
-			errors: {
-				[fKey]: {
-					msg: `Invalid ${fKey}`
-				}
-			}
-		});
-	}
-
-	if (err instanceof sequelize.UniqueConstraintError &&
-		_.some(err.errors, _.matches({
-			type: 'unique violation',
-			path: 'fileId'
-		}))
-	) {
-		throw new HttpError(400, 'invalid_input', {
-			errors: {
-				fileId: {
-					msg: 'This file already in use'
-				}
-			}
-		});
-	}
-
-	throw err;
-}
+const catchBeatConstraintErrors = catchSequelizeConstraintErrors({
+	'fKey:genreId': 'Invalid genreId',
+	'fKey:fileId': 'Invalid fileId',
+	'unique:fileId': 'This file is already in use'
+});
 
 const beats = Router();
 
 beats.post('/',
 	authorizedOnly,
 	validate({
-		body: {
-			...inputBeatSchema,
-			name: {
-				...inputBeatSchema.name,
-				notEmpty: true
-			},
-			tempo: {
-				...inputBeatSchema.tempo,
-				notEmpty: true
-			},
-			genreId: {
-				...inputBeatSchema.genreId,
-				notEmpty: true
-			},
-			fileId: {
-				...inputBeatSchema.fileId,
-				notEmpty: true
-			},
-			price: {
-				...inputBeatSchema.price,
-				notEmpty: true
-			}
-		}
+		body: validate.notEmpty(inputBeatSchema, [
+			'name', 'tempo', 'genreId', 'fileId', 'price'
+		])
 	}),
 	wrap(async function (req, res) {
 		const beat = await Beat.create({
 			...req.body,
 			userId: req.user_id
-		}).catch(catchBeatError);
+		}).catch(catchBeatConstraintErrors);
 
-		res.send({
-			beat: {
-				...beat.toJSON(),
-				file: await beat.getFile()
-			}
-		});
+		beat.setDataValue('file', await beat.getFile());
+
+		res.status(200).json({beat});
 	})
 );
 
 beats.get('/user/:userId',
 	wrap(async function (req, res) {
-		const beats = await Beat.scope('with:file').findAll({
-			where: {
-				userId: req.params.userId
-			}
-		});
+		const beats = await Beat
+			.scope('orderBy:createdAt_desc', 'with:file')
+			.findAll({
+				where: {
+					userId: req.params.userId
+				}
+			});
 
 		res.status(200).json({beats});
 	})
@@ -123,13 +77,12 @@ beats.get('/search',
 	validate({
 		query: {
 			q: {
+				notEmpty: true,
 				errorMessage: 'Invalid query'
 			},
 			genreId: {
 				optional: true,
-				isInt: {
-					options: []
-				},
+				isInt: true,
 				errorMessage: 'Invalid genre'
 			}
 		}
@@ -145,30 +98,28 @@ beats.get('/search',
 			query.genreId = req.query.genreId;
 		}
 
-		const freshBeats = await Beat.scope('with:file').findAll({
-			where: {
-				...query,
-				createdAt: {
-					$gte: new Date(new Date() - config.get('search.fresh.days') * 24 * 60 * 60 * 1000)
-				}
-			},
-			order: [
-				['createdAt', 'DESC']
-			],
-			limit: config.get('search.fresh.limit')
-		});
+		const freshBeats = await Beat
+			.scope('orderBy:createdAt_desc', 'with:file')
+			.findAll({
+				where: {
+					...query,
+					createdAt: {
+						$gte: date(`${config.search.fresh.days} days ago`)
+					}
+				},
+				limit: config.get('search.fresh.limit')
+			});
 
-		const beats = await Beat.scope('with:file').findAll({
-			where: {
-				...query,
-				id: {
-					$notIn: freshBeats.map(beat => beat.id)
+		const beats = await Beat
+			.scope('orderBy:createdAt_desc', 'with:file')
+			.findAll({
+				where: {
+					...query,
+					id: {
+						$notIn: _.map(freshBeats, '_')
+					}
 				}
-			},
-			order: [
-				['createdAt', 'DESC']
-			]
-		});
+			});
 
 		res.status(200).json({freshBeats, beats});
 	})
@@ -184,9 +135,7 @@ beats.post('/files',
 			duration: req.file.duration
 		});
 
-		res.status(200).json({
-			file: beatFile
-		})
+		res.status(200).json({file: beatFile});
 	})
 );
 
@@ -201,15 +150,14 @@ beats.post('/:id(\\d+)',
 				userId: req.user_id,
 				id: req.params.id
 			}
-		}).catch(catchBeatError);
+		}).catch(catchBeatConstraintErrors);
 
-		if (updated) {
-			const beat = await Beat.scope('with:file').findById(req.params.id)
-
-			res.status(200).json({beat});
-		} else {
+		if (!updated) {
 			throw new HttpError(403, 'access_denied');
 		}
+
+		const beat = await Beat.scope('with:file').findById(req.params.id);
+		res.status(200).json({beat});
 	})
 );
 

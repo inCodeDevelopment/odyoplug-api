@@ -1,11 +1,9 @@
-import config from 'config';
 import supertest from 'supertest';
-import { clear as clearDb } from 'dbUtils';
+import {clear as clearDb} from 'dbUtils';
 import app from 'app';
-import should from 'should';
 import sinon from 'sinon';
 import mailer from 'mailer';
-import { createAndActivateUser, createUser } from './testUtils';
+import {createAndActivateUser, createUser} from './testUtils';
 
 const agent = supertest(app);
 
@@ -65,7 +63,6 @@ describe('api /users', function () {
 				errors: {
 					username: {
 						msg: 'Username is taken',
-						param: 'username',
 						value: 'Test'
 					}
 				}
@@ -93,7 +90,6 @@ describe('api /users', function () {
 				errors: {
 					email: {
 						msg: 'Email is already in use',
-						param: 'email',
 						value: 'Test@gmail.com'
 					}
 				}
@@ -101,11 +97,11 @@ describe('api /users', function () {
 		});
 	});
 
-	describe('POST /activate', function() {
+	describe('POST /activate', function () {
 		let email = 'test@test.com';
 		let activationToken;
 
-		beforeEach('create user', async function() {
+		beforeEach('create user', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			await agent.post('/api/users/signup')
@@ -120,26 +116,25 @@ describe('api /users', function () {
 			mailer.send.restore();
 		});
 
-		it('should activate account', async function() {
+		it('should activate account', async function () {
 			const activateResponse = await agent.post('/api/users/activate')
 				.send({email, activationToken});
 
 			activateResponse.statusCode.should.be.equal(200);
 			activateResponse.body.should.have.property('access_token');
 		});
-		it('should reject invalid token', async function() {
+		it('should reject invalid token', async function () {
 			const activateResponse = await agent.post('/api/users/activate')
-				.send({email, activationToken:'123'});
-
+				.send({email, activationToken: '123'});
 			activateResponse.statusCode.should.be.equal(400);
 		});
-	})
+	});
 
 	describe('POST /requestActivationEmail', function () {
-		beforeEach('create user', async function() {
+		beforeEach('create user', async function () {
 			await createUser('test@gmail.com', 'test', '123123');
-		})
-		it('should send email', async function() {
+		});
+		it('should send email', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
@@ -153,7 +148,7 @@ describe('api /users', function () {
 
 			mailer.send.restore();
 		});
-		it('should return 400 if user not exists', async function() {
+		it('should return 400 if user not exists', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestActivationEmailResponse = await agent.post('/api/users/requestActivationEmail')
@@ -170,10 +165,10 @@ describe('api /users', function () {
 	});
 
 	describe('POST /requestPasswordRestoreEmail', function () {
-		beforeEach('create user', async function() {
+		beforeEach('create user', async function () {
 			await createUser('test@gmail.com', 'test', '123123');
 		})
-		it('should send email', async function() {
+		it('should send email', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
@@ -187,7 +182,7 @@ describe('api /users', function () {
 
 			mailer.send.restore();
 		});
-		it('should return 400 if user not exists', async function() {
+		it('should return 400 if user not exists', async function () {
 			sinon.stub(mailer, 'send').returns(Promise.resolve());
 
 			const requestPasswordRestoreEmailResponse = await agent.post('/api/users/requestPasswordRestoreEmail')
@@ -207,7 +202,7 @@ describe('api /users', function () {
 		let email = 'test@test.com';
 		let passwordRestoreToken;
 
-		beforeEach('create user', async function() {
+		beforeEach('create user', async function () {
 			await agent.post('/api/users/signup')
 				.send({
 					email: email,
@@ -227,15 +222,15 @@ describe('api /users', function () {
 			mailer.send.restore();
 		});
 
-		it('should change password', async function() {
+		it('should change password', async function () {
 			const activateResponse = await agent.post('/api/users/changePassword')
 				.send({email, passwordRestoreToken, password: '123123123'});
 
 			activateResponse.statusCode.should.be.equal(200);
 		});
-		it('should reject invalid token', async function() {
+		it('should reject invalid token', async function () {
 			const activateResponse = await agent.post('/api/users/changePassword')
-				.send({email, passwordRestoreToken:'123', password: '123123123'});
+				.send({email, passwordRestoreToken: '123', password: '123123123'});
 
 			activateResponse.statusCode.should.be.equal(400);
 		});
@@ -343,7 +338,7 @@ describe('api /users', function () {
 			accessToken = signInResponse.body.access_token;
 		});
 
-		it('should update name', async function() {
+		it('should update name', async function () {
 			const updateMeResponse = await agent.post('/api/users/me')
 				.set('Authorization', accessToken)
 				.send({
@@ -356,7 +351,7 @@ describe('api /users', function () {
 			});
 		});
 
-		it('should not update email', async function() {
+		it('should not update email', async function () {
 			const updateMeResponse = await agent.post('/api/users/me')
 				.set('Authorization', accessToken)
 				.send({
@@ -368,7 +363,7 @@ describe('api /users', function () {
 			});
 		});
 
-		it('should update password', async function() {
+		it('should update password', async function () {
 			const updateMeResponse = await agent.post('/api/users/me')
 				.set('Authorization', accessToken)
 				.set('Password', '123123123')
@@ -387,7 +382,7 @@ describe('api /users', function () {
 			signInResponse.statusCode.should.be.equal(200);
 		});
 
-		it('should not update password if old password is wrong', async function() {
+		it('should not update password if old password is wrong', async function () {
 			const updateMeResponse = await agent.post('/api/users/me')
 				.set('Authorization', accessToken)
 				.set('Password', '123123')

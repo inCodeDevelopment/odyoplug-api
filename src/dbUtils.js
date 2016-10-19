@@ -1,4 +1,5 @@
 import db from 'db';
+
 import createFixtures from 'fixtures';
 
 export async function createExtensions() {

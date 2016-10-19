@@ -1,10 +1,8 @@
-import config from 'config';
 import supertest from 'supertest';
-import { clear as clearDb } from 'dbUtils';
+import {clear as clearDb} from 'dbUtils';
 import app from 'app';
-import should from 'should';
 
-import { createAndActivateUser, createBeat } from './testUtils';
+import {createAndActivateUser, createBeat} from './testUtils';
 
 const agent = supertest(app);
 
@@ -13,7 +11,7 @@ beforeEach(clearDb);
 
 describe('api /cart', function () {
 	describe('POST /guest', function () {
-		it('should return cartId', async function() {
+		it('should return cartId', async function () {
 			const createCart = await agent.post('/api/cart/guest').send();
 
 			createCart.statusCode.should.be.equal(200);
@@ -25,13 +23,13 @@ describe('api /cart', function () {
 	describe('GET /:id', function () {
 		let beatId, buyerAccessToken;
 
-		beforeEach('create beat', async function() {
+		beforeEach('create beat', async function () {
 			buyerAccessToken = await createAndActivateUser('buyer@gmail.com', 'buyer', '123123');
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
 		});
 
-		it('should return beats in my cart', async function() {
+		it('should return beats in my cart', async function () {
 			await agent.post('/api/cart/my/addBeat')
 				.set('Authorization', buyerAccessToken)
 				.send({
@@ -52,7 +50,7 @@ describe('api /cart', function () {
 				}
 			});
 		});
-		it('should return beats in guests cart', async function() {
+		it('should return beats in guests cart', async function () {
 			await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
 					beatId: beatId
@@ -76,7 +74,7 @@ describe('api /cart', function () {
 	describe('POST /my/import', function () {
 		let beatId, buyerAccessToken;
 
-		beforeEach('create beat', async function() {
+		beforeEach('create beat', async function () {
 			buyerAccessToken = await createAndActivateUser('buyer@gmail.com', 'buyer', '123123');
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
@@ -87,7 +85,7 @@ describe('api /cart', function () {
 				});
 		});
 
-		it('should merge guest cart with user cart', async function() {
+		it('should merge guest cart with user cart', async function () {
 			const importCart = await agent.post('/api/cart/my/import')
 				.set('Authorization', buyerAccessToken)
 				.send({cartId: '1f9ceb00-59f9-4d16-a161-2b4491313405'});
@@ -108,7 +106,7 @@ describe('api /cart', function () {
 	describe('POST /:id/addBeat', function () {
 		let beatId;
 
-		beforeEach('create beat', async function() {
+		beforeEach('create beat', async function () {
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
 		});
@@ -150,7 +148,7 @@ describe('api /cart', function () {
 	describe('POST /:id/removeBeat', function () {
 		let beatId;
 
-		beforeEach('create beat', async function() {
+		beforeEach('create beat', async function () {
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
 
@@ -160,7 +158,7 @@ describe('api /cart', function () {
 				});
 		});
 
-		it('should remove beat from cart', async function() {
+		it('should remove beat from cart', async function () {
 			const removeBeat = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/removeBeat')
 				.send({
 					beatId: beatId
@@ -174,7 +172,7 @@ describe('api /cart', function () {
 	describe('POST /:id/clear', function () {
 		let beatId;
 
-		beforeEach('create beat', async function() {
+		beforeEach('create beat', async function () {
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
 
@@ -184,7 +182,7 @@ describe('api /cart', function () {
 				});
 		});
 
-		it('should empty cart', async function() {
+		it('should empty cart', async function () {
 			const removeBeats = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/clear')
 				.send();
 
