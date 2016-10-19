@@ -1,5 +1,6 @@
 import Sequelize from 'sequelize';
 import dbConnection from 'dbConnection';
+import initializer from './initializer';
 
 export const Transaction = dbConnection.define('transaction', {
 	tx: {
@@ -37,7 +38,7 @@ export const Transaction = dbConnection.define('transaction', {
 	}
 });
 
-export function postLoad({User, TransactionItem, Beat, BeatFile}) {
+initializer.after(['models'], function ({User, TransactionItem}) {
 	Transaction.hasMany(Transaction, {
 		as: 'subTransactions',
 		foreignKey: 'superTransactionId'
@@ -53,25 +54,20 @@ export function postLoad({User, TransactionItem, Beat, BeatFile}) {
 	Transaction.hasMany(TransactionItem, {
 		as: 'items'
 	});
+});
 
+initializer.after(['models', 'TransactionItem scope with:beat'], function ({TransactionItem}) {
 	Transaction.addScope('with:items', {
 		include: [
 			{
-				model: TransactionItem,
-				as: 'items',
-				include: [{
-					model: Beat,
-					include: [
-						{
-							model: BeatFile,
-							as: 'file'
-						}
-					]
-				}]
+				model: TransactionItem.scope('with:beat')
 			}
 		]
 	});
+	initializer.did('Transaction scope with:items');
+});
 
+initializer.after(['models', 'Transaction scope with:items'], function () {
 	Transaction.addScope('with:subTransactions', {
 		include: [
 			{
@@ -80,5 +76,5 @@ export function postLoad({User, TransactionItem, Beat, BeatFile}) {
 			}
 		]
 	});
-}
-
+	initializer.did('Transaction scope with:subTransactions');
+});

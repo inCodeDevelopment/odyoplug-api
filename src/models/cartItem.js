@@ -1,5 +1,6 @@
 import Sequelize from 'sequelize';
 import dbConnection from 'dbConnection';
+import initializer from './initializer';
 
 export const CartItem = dbConnection.define('cartItem', {
 	cartId: {
@@ -25,7 +26,7 @@ export const CartItem = dbConnection.define('cartItem', {
 	]
 });
 
-export function postLoad({Beat, BeatFile, User}) {
+initializer.after(['models'], function ({Beat, User}) {
 	CartItem.belongsTo(Beat, {
 		onDelete: 'CASCADE'
 	});
@@ -33,18 +34,15 @@ export function postLoad({Beat, BeatFile, User}) {
 	CartItem.belongsTo(User, {
 		onDelete: 'CASCADE'
 	});
+});
 
+initializer.after(['models', 'Beat scope with:file'], function ({Beat}) {
 	CartItem.addScope('with:beats', {
 		include: [
 			{
-				model: Beat,
-				include: [
-					{
-						model: BeatFile,
-						as: 'file'
-					}
-				]
+				model: Beat.scope('with:file')
 			}
 		]
 	});
-}
+	initializer.did('CartItem scope with:beats');
+});

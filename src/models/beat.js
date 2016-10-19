@@ -1,5 +1,6 @@
 import Sequelize from 'sequelize';
 import dbConnection from 'dbConnection';
+import initializer from './initializer';
 
 export const Beat = dbConnection.define('beat', {
 	name: {
@@ -29,7 +30,7 @@ export const Beat = dbConnection.define('beat', {
 	]
 });
 
-export function postLoad({Genre, User, BeatFile}) {
+initializer.after(['models'], function ({Genre, User, BeatFile}) {
 	Beat.belongsTo(Genre);
 
 	Beat.belongsTo(User, {
@@ -48,10 +49,11 @@ export function postLoad({Genre, User, BeatFile}) {
 			}
 		]
 	});
+	initializer.did('Beat scope with:file');
 
 	Beat.addScope('orderBy:createdAt_desc', {
 		order: [
 			['createdAt', 'DESC']
 		]
 	});
-}
+});

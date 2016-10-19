@@ -1,20 +1,17 @@
-import {Beat, postLoad as beatPostLoad} from './beat';
+import {Beat} from './beat';
 import {BeatFile} from './beatFile';
-import {CartItem, postLoad as cartItemPostLoad} from './cartItem';
+import {CartItem} from './cartItem';
 import {Genre} from './genre';
-import {Transaction, postLoad as transactionPostLoad} from './transaction';
-import {TransactionItem, postLoad as transactionItemPostLoad} from './transactionItem';
-import {User, postLoad as userPostLoad} from './user';
+import {Transaction} from './transaction';
+import {TransactionItem} from './transactionItem';
+import {User} from './user';
+import initializer from './initializer';
 
-const models = {
+initializer.did('models', {
 	Beat, BeatFile, CartItem, Genre, Transaction, TransactionItem, User
-};
+});
 
-beatPostLoad(models);
-cartItemPostLoad(models);
-transactionPostLoad(models);
-transactionItemPostLoad(models);
-userPostLoad(models);
+initializer.resolve();
 
 export {Beat} from './beat';
 export {BeatFile} from './beatFile';

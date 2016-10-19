@@ -1,6 +1,7 @@
 import Sequelize from 'sequelize';
 import dbConnection from 'dbConnection';
 import bcrypt from 'bcrypt-as-promised';
+import initializer from './initializer';
 
 export const User = dbConnection.define('user', {
 	email: {
@@ -80,15 +81,16 @@ export const User = dbConnection.define('user', {
 			delete values.hash;
 			delete values.active;
 			delete values.activationToken;
-			delete values.passwordChangeToken;
+			delete values.passwordRestoreToken;
+			delete values.passwordRestoreToken;
 
 			return values;
 		}
 	}
 });
 
-export function postLoad({Beat}) {
+initializer.after(['models'], function ({Beat}) {
 	User.hasMany(Beat, {
 		onDelete: 'CASCADE'
 	});
-}
+});

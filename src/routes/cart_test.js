@@ -59,6 +59,7 @@ describe('api /cart', function () {
 			const cart = await agent.get('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405');
 
 			cart.statusCode.should.be.equal(200);
+
 			cart.body.should.containDeep({
 				cart: {
 					beats: [
