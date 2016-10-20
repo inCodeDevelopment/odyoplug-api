@@ -77,7 +77,7 @@ beats.get('/search',
 	validate({
 		query: {
 			q: {
-				notEmpty: true,
+				optional: true,
 				errorMessage: 'Invalid query'
 			},
 			genreId: {
@@ -88,11 +88,13 @@ beats.get('/search',
 		}
 	}),
 	wrap(async function (req, res) {
-		const query = {
-			name: {
+		const query = {};
+
+		if (req.query.q) {
+			query.name = {
 				$iLike: `%${req.query.q}%`
-			}
-		};
+			};
+		}
 
 		if (req.query.genreId) {
 			query.genreId = req.query.genreId;

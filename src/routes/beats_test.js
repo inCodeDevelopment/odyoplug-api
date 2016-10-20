@@ -312,6 +312,14 @@ describe('api /beats', function () {
 			}
 		});
 
+		it('should return list of beats', async function () {
+			const getBeatsByUserResponse = await agent.get(`/api/beats/search`);
+
+			getBeatsByUserResponse.statusCode.should.be.equal(200);
+			getBeatsByUserResponse.body.freshBeats.length.should.be.equal(5);
+		});
+
+
 		it('should filter beats by query', async function () {
 			const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world`);
 

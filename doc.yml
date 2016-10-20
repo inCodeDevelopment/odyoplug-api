@@ -350,7 +350,6 @@ paths:
                 - in: query
                   name: q
                   type: string
-                  required: true
                 - in: query
                   name: genreId
                   type: number
