@@ -1,35 +1,29 @@
-import { Router } from 'express';
-import { validate, authorizedOnly } from 'middlewares';
-import { HttpError } from 'HttpError';
+import {Router} from 'express';
+import sequelize from 'sequelize';
+import {validate, authorizedOnly} from 'middlewares';
+import {HttpError} from 'HttpError';
 import paypal from 'paypal';
 import _ from 'lodash';
-import url from 'url';
 import config from 'config';
 
-import { Transaction, Beat, CartItem, BeatFile, User } from 'db';
+import {Transaction, Beat, CartItem, User} from 'db';
 
-import { wrap } from './utils';
+import {wrap} from './utils';
 
 const transactions = Router();
 
 transactions.get('/',
 	authorizedOnly,
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const query = {};
 
 		if (req.query.q) {
 			query.$or = [
 				{tx: {$iLike: `%${req.query.q}%`}},
-				{transactionId: {$iLike: `%${req.query.q}%`}},
+				{paypalId: {$iLike: `%${req.query.q}%`}},
 				{paypalBuyer: {$iLike: `%${req.query.q}%`}},
 				{paypalSeller: {$iLike: `%${req.query.q}%`}},
-				{'items.beat.name': {$iLike: `%${req.query.q}%`}},
-
-				{'subTransactions.tx': {$iLike: `%${req.query.q}%`}},
-				{'subTransactions.transactionId': {$iLike: `%${req.query.q}%`}},
-				{'subTransactions.paypalBuyer': {$iLike: `%${req.query.q}%`}},
-				{'subTransactions.paypalSeller': {$iLike: `%${req.query.q}%`}},
-				{'subTransactions.items.beat.name': {$iLike: `%${req.query.q}%`}}
+				{itemNames: {$iLike: `%${req.query.q}%`}}
 			];
 		}
 
@@ -38,7 +32,7 @@ transactions.get('/',
 		}
 
 		const transactions = await Transaction
-			.scope('with:subTransactions', 'with:items')
+			.scope('with:items', 'skip:superTransactions')
 			.findAll({
 				where: {
 					...query,
@@ -52,9 +46,9 @@ transactions.get('/',
 
 transactions.get('/getByPayPalECToken',
 	authorizedOnly,
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:subTransactions', 'with:items')
+			.scope('with:items', 'skip:superTransactions')
 			.findOne({
 				where: {
 					userId: req.user_id,
@@ -72,9 +66,9 @@ transactions.get('/getByPayPalECToken',
 );
 
 const updateTransactionInfoByPayPalECToken = wrap(
-	async function(req, res) {
+	async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:subTransactions', 'with:items')
+			.scope('with:subTransactions', 'with:items', 'skip:subTransactions')
 			.findOne({
 				where: {
 					userId: req.user_id,
@@ -148,9 +142,9 @@ transactions.post('/finalizeByPayPalECToken',
 			}
 		}
 	}),
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:subTransactions', 'with:items')
+			.scope('with:subTransactions', 'with:items', 'skip:subTransactions')
 			.findOne({
 				where: {
 					userId: req.user_id,
@@ -188,7 +182,7 @@ transactions.post('/finalizeByPayPalECToken',
 	updateTransactionInfoByPayPalECToken
 );
 
-transactions.post('/updateTransactionInfoByPayPalECToken',
+transactions.post('/refreshByPayPalECToken',
 	authorizedOnly,
 	validate({
 		body: {
@@ -203,7 +197,7 @@ transactions.post('/updateTransactionInfoByPayPalECToken',
 
 transactions.get('/:id(\\d+)',
 	authorizedOnly,
-	wrap(async function(req, res) {
+	wrap(async function (req, res) {
 		const transaction = await Transaction.scope('with:items').findOne({
 			where: {
 				userId: req.user_id,
@@ -223,12 +217,13 @@ transactions.post('/cart',
 	wrap(async function (req, res) {
 		const beats = await CartItem
 			.findAll({
-				where: req.cart,
+				where: {
+					userId: req.user_id
+				},
 				include: [{
 					model: Beat,
 					include: [
-						{model: User},
-						{model: BeatFile, as: 'file'}
+						{model: User}
 					]
 				}]
 			})
@@ -264,13 +259,6 @@ transactions.post('/cart',
 				}]
 			}
 		];
-		await transaction.createSubTransaction({
-			userId: req.user_id,
-			tx: `${transaction.tx}-TAX`,
-			type: 'tax',
-			amount: taxAmount,
-			status: 'wait'
-		});
 
 		const beatsByUser = _.groupBy(beats, 'userId');
 		for (const userId of Object.keys(beatsByUser)) {
@@ -289,17 +277,18 @@ transactions.post('/cart',
 				)
 			});
 
-			const subTransactions = await transaction.createSubTransaction({
+			const subTransaction = await transaction.createSubTransaction({
 				userId: req.user_id,
 				tx: `${transaction.tx}-${userId}`,
 				type: 'beats_purchase',
-				amount: _.sumBy(beatsByUser[userId], beat => priceAT(beat.price)),
+				amount: _.sumBy(beatsByUser[userId], 'price'),
 				status: 'wait',
-				paypalSeller: beatsByUser[userId][0].user.paypalReceiver
+				paypalSeller: beatsByUser[userId][0].user.paypalReceiver,
+				itemNames: beatsByUser[userId].map(_.property('name')).join(',')
 			});
 
 			for (const beat of beatsByUser[userId]) {
-				await subTransactions.createItem({
+				await subTransaction.createItem({
 					price: beat.price,
 					type: 'beat',
 					beatId: beat.id
@@ -307,11 +296,9 @@ transactions.post('/cart',
 			}
 		}
 
-		const baseURL = req.get('Referer') || config.baseUrl;
-
 		const expressCheckout = await paypal.setExpressCheckout({
-			returnURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
-			cancelURL: url.resolve(baseURL, '/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
+			returnURL: req.resolveFromBaseURL('/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
+			cancelURL: req.resolveFromBaseURL('/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
 			payments: payments
 		});
 

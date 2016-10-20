@@ -608,6 +608,9 @@ paths:
                                 $ref: '#/definitions/Transaction'
     /transactions/getByPayPalECToken:
         get:
+            tags: [transaction]
+            summary: Get transaction by paypal ecToken
+            operationId: transactionGetByPayPalECToken
             parameters:
               - in: query
                 name: ecToken
@@ -622,6 +625,30 @@ paths:
                                 $ref: '#/definitions/Transaction'
     /transactions/finalizeByPayPalECToken:
         post:
+            tags: [transaction]
+            summary: Finalize transaction by paypal ecToken
+            operationId: transactionFinalizeByPayPalECToken
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        ecToken:
+                            type: string
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            transaction:
+                                $ref: '#/definitions/Transaction'
+    /transactions/refreshByPayPalECToken:
+        post:
+            tags: [transaction]
+            summary: Refresh transaction by paypal ecToken
+            operationId: transactionRefreshByPayPalECToken
             parameters:
               - in: body
                 name: body

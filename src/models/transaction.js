@@ -29,14 +29,20 @@ export const Transaction = dbConnection.define('transaction', {
 	},
 	paypalSeller: {
 		type: Sequelize.STRING
+	},
+	itemNames: {
+		type: Sequelize.STRING
 	}
-}, {
-	defaultScope: {
-		where: {
-			superTransactionId: null
+});
+
+Transaction.addScope('skip:superTransactions', {
+	where: {
+		superTransactionId: {
+			$ne: null
 		}
 	}
 });
+initializer.did('Transaction scope skip:superTransactions');
 
 initializer.after(['models'], function ({User, TransactionItem}) {
 	Transaction.hasMany(Transaction, {
@@ -60,7 +66,8 @@ initializer.after(['models', 'TransactionItem scope with:beat'], function ({Tran
 	Transaction.addScope('with:items', {
 		include: [
 			{
-				model: TransactionItem.scope('with:beat')
+				model: TransactionItem.scope('with:beat'),
+				as: 'items'
 			}
 		]
 	});

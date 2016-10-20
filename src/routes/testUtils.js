@@ -51,7 +51,7 @@ export async function createAndActivateUser(email, username, password, paypalRec
 	return accessToken;
 }
 
-export async function createBeat(accessToken) {
+export async function createBeat(accessToken, name) {
 	const agent = supertest(app);
 
 	const uploadBeatFileResponse = await agent.post('/api/beats/files')
@@ -64,7 +64,7 @@ export async function createBeat(accessToken) {
 	const createBeatResponse = await agent.post('/api/beats')
 		.set('Authorization', accessToken)
 		.send({
-			name: "FooBar",
+			name: name || "FooBar",
 			tempo: 145,
 			price: 3.99,
 			genreId: 13,
