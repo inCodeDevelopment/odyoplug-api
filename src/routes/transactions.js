@@ -273,7 +273,7 @@ transactions.post('/cart',
 				currency: 'USD',
 				action: 'SALE',
 				description: beatsByUser[userId][0].user.name,
-				receiver: beatsByUser[userId][0].user.paypalReceiver,
+				receiver: beatsByUser[userId][0].user.paypalReceiver || beatsByUser[userId][0].user.email,
 				id: `${transaction.tx}-${userId}`,
 				items: beatsByUser[userId].map(
 					beat => ({
@@ -290,7 +290,7 @@ transactions.post('/cart',
 				type: 'beats_purchase',
 				amount: _.sumBy(beatsByUser[userId], 'price'),
 				status: 'wait',
-				paypalSeller: beatsByUser[userId][0].user.paypalReceiver,
+				paypalSeller: beatsByUser[userId][0].user.paypalReceiver || beatsByUser[userId][0].user.email,
 				itemNames: beatsByUser[userId].map(_.property('name')).join(',')
 			});
 

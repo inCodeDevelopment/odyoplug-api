@@ -107,7 +107,7 @@ cart.post('/:id/addBeat',
 			include: [{model: User}]
 		});
 
-		if (!beat.user.paypalReceiver) {
+		if (!beat.user.paypalReceiver && !beat.user.email) {
 			throw new HttpError(422, 'invalid_paypal_receiver', {
 				errorMessage: 'Since producer has not provided proper paypal receiver email, you can\' purchase this beat'
 			});
