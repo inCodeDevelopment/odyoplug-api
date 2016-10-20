@@ -24,6 +24,8 @@ tags:
     description: Payment operations
   - name: transaction
     description: Transaction operations
+  - name: license
+    description: License operations
 
 securityDefinitions:
     access_token:
@@ -679,6 +681,96 @@ paths:
                         properties:
                             transaction:
                                 $ref: '#/definitions/Transaction'
+    /licenses:
+        get:
+            tags: [license]
+            summary: Get list of licenses
+            operationId: licensesGet
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            licenses:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/License'
+        post:
+            tags: [license]
+            summary: Create new license
+            operationId: licenseCreate
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        license:
+                            $ref: '#/definitions/InputNewLicense'
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            license:
+                                $ref: '#/definitions/License'
+    /licenses/{licenseId}:
+        get:
+            tags: [license]
+            summary: Get license by id
+            operationId: licenseGetById
+            parameters:
+              - in: path
+                name: licenseId
+                required: true
+                type: number
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            license:
+                                $ref: '#/definitions/License'
+        post:
+            tags: [license]
+            summary: Update license by id
+            operationId: licenseCreate
+            parameters:
+              - in: path
+                name: licenseId
+                required: true
+                type: number
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        license:
+                            $ref: '#/definitions/InputLicense'
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            license:
+                                $ref: '#/definitions/License'
+        delete:
+            tags: [license]
+            summary: Delete license by id
+            operationId: licenseCreate
+            parameters:
+              - in: path
+                name: licenseId
+                required: true
+                type: number
+            responses:
+                '200':
+                    description: Success
+
 responses:
     Cart:
         description: Success
@@ -731,6 +823,49 @@ definitions:
             paypalReceiver:
                 type: string
                 format: email
+    InputLicense:
+        type: object
+        properties: &InputLicenseProperties
+            name:
+                type: string
+            mp3:
+                type: boolean
+            wav:
+                type: boolean
+            trackout:
+                type: boolean
+            discounts:
+                type: boolean
+            enabled:
+                type: boolean
+    InputNewLicense:
+        type: object
+        required:
+            - name
+            - mp3
+            - wav
+            - trackout
+            - discounts
+            - enabled
+        properties:
+            <<: *InputLicenseProperties
+    License:
+        type: object
+        required:
+            - id
+            - name
+            - mp3
+            - wav
+            - trackout
+            - discounts
+            - enabled
+            - default
+        properties:
+            <<: *InputLicenseProperties
+            id:
+                type: number
+            default:
+                type: boolean
     BeatFile:
         type: object
         required:
