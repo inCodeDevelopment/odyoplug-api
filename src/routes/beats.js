@@ -161,4 +161,22 @@ beats.post('/:id(\\d+)',
 	})
 );
 
+beats.delete('/:id(\\d+)',
+	authorizedOnly,
+	wrap(async function (req, res) {
+		const deleted = await Beat.destroy({
+			where: {
+				id: req.params.id,
+				userId: req.user_id
+			}
+		});
+
+		if (!deleted) {
+			throw new HttpError(403, 'access_denied');
+		}
+
+		res.status(200).send();
+	})
+);
+
 export default beats;

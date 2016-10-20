@@ -470,6 +470,19 @@ paths:
                         properties:
                             beat:
                                 $ref: '#/definitions/Beat'
+        delete:
+            tags: [beat]
+            summary: Delete beat
+            operationId: beatDelete
+            security:
+              - accessToken: []
+            parameters:
+              - in: path
+                name: beatId
+                typ: number
+            responses:
+                '200':
+                    description: Deleted
     /cart/guest:
         post:
             tags: [cart]

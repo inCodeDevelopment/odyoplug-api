@@ -40,7 +40,8 @@ initializer.after(['models', 'Beat scope with:file'], function ({Beat}) {
 	CartItem.addScope('with:beats', {
 		include: [
 			{
-				model: Beat.scope('with:file')
+				model: Beat.scope('with:file'),
+				paranoid: true
 			}
 		]
 	});

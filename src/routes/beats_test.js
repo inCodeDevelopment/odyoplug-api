@@ -216,6 +216,47 @@ describe('api /beats', function () {
 		});
 	});
 
+	describe('DELETE /:beatId', function () {
+		let beatId, accessToken2;
+
+		beforeEach(async function () {
+			accessToken2 = await createAndActivateUser('test1@gmail.com', 'test1', '123123');
+			const uploadBeatFileResponse = await agent.post('/api/beats/files')
+				.set('Authorization', accessToken)
+				.attach('beatFile', 'src/assets_test/audio.mp3')
+				.send({});
+
+			const fileId = uploadBeatFileResponse.body.file.id;
+
+			const createBeatResponse = await agent.post('/api/beats')
+				.set('Authorization', accessToken)
+				.send({
+					name: "FooBar",
+					tempo: 145,
+					price: 3.99,
+					genreId: 13,
+					fileId: fileId
+				});
+
+			beatId = createBeatResponse.body.beat.id;
+		});
+
+		it('should delete beat', async function () {
+			const deleteBeatResponse = await agent.delete(`/api/beats/${beatId}`)
+				.set('Authorization', accessToken)
+				.send();
+
+			deleteBeatResponse.statusCode.should.be.equal(200);
+		});
+		it('should return 403 on attempt to delete others beat', async function () {
+			const deleteBeatResponse = await agent.delete(`/api/beats/${beatId}`)
+				.set('Authorization', accessToken2)
+				.send();
+
+			deleteBeatResponse.statusCode.should.be.equal(403);
+		});
+	});
+
 	describe('GET /user/{userId}', function () {
 		let userId;
 
@@ -235,7 +276,8 @@ describe('api /beats', function () {
 					});
 				userId = res.body.beat.userId;
 			}
-		})
+		});
+
 		it('should return list of user beats', async function () {
 			const getBeatsByUserResponse = await agent.get(`/api/beats/user/${userId}`);
 
@@ -268,7 +310,8 @@ describe('api /beats', function () {
 							.send({})).body.file.id
 					});
 			}
-		})
+		});
+
 		it('should filter beats by query', async function () {
 			const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world`);
 
@@ -276,6 +319,7 @@ describe('api /beats', function () {
 			getBeatsByUserResponse.body.freshBeats.length.should.be.equal(2);
 			getBeatsByUserResponse.body.freshBeats[0].should.have.property('file');
 		});
+
 		it('should filter beats by query and genreId', async function () {
 			const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world&genreId=3`);
 
@@ -283,6 +327,7 @@ describe('api /beats', function () {
 			getBeatsByUserResponse.body.freshBeats.length.should.be.equal(1);
 			getBeatsByUserResponse.body.freshBeats[0].should.have.property('file');
 		});
+
 		it('should include both fresh and other beats', async function () {
 			const getBeatsByUserResponse = await agent.get(`/api/beats/search?q=world`);
 			getBeatsByUserResponse.body.should.have.property('freshBeats');

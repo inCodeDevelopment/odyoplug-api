@@ -21,6 +21,7 @@ export const Beat = dbConnection.define('beat', {
 	}
 }, {
 	timestamps: true,
+	paranoid: true,
 	indexes: [
 		{
 			method: 'GIST',

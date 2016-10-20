@@ -17,13 +17,14 @@ transactions.get('/',
 	wrap(async function (req, res) {
 		const query = {};
 
+		const iLike = {$iLike: `%${req.query.q}%`};
 		if (req.query.q) {
 			query.$or = [
-				{tx: {$iLike: `%${req.query.q}%`}},
-				{paypalId: {$iLike: `%${req.query.q}%`}},
-				{paypalBuyer: {$iLike: `%${req.query.q}%`}},
-				{paypalSeller: {$iLike: `%${req.query.q}%`}},
-				{itemNames: {$iLike: `%${req.query.q}%`}}
+				{tx: iLike},
+				{paypalId: iLike},
+				{paypalBuyer: iLike},
+				{paypalSeller: iLike},
+				{itemNames: iLike}
 			];
 		}
 
@@ -68,7 +69,7 @@ transactions.get('/getByPayPalECToken',
 const updateTransactionInfoByPayPalECToken = wrap(
 	async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:subTransactions', 'with:items', 'skip:subTransactions')
+			.scope('with:items', 'skip:superTransactions')
 			.findOne({
 				where: {
 					userId: req.user_id,
@@ -144,7 +145,7 @@ transactions.post('/finalizeByPayPalECToken',
 	}),
 	wrap(async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:subTransactions', 'with:items', 'skip:subTransactions')
+			.scope('with:items', 'skip:superTransactions')
 			.findOne({
 				where: {
 					userId: req.user_id,
