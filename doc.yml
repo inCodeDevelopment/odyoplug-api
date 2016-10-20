@@ -633,8 +633,10 @@ paths:
                     schema:
                         type: object
                         properties:
-                            transaction:
-                                $ref: '#/definitions/Transaction'
+                            transactions:
+                                type: array
+                                items:
+                                    $ref: '#/definitions/Transaction'
     /transactions/finalizeByPayPalECToken:
         post:
             tags: [transaction]

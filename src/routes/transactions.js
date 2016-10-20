@@ -48,20 +48,26 @@ transactions.get('/',
 transactions.get('/getByPayPalECToken',
 	authorizedOnly,
 	wrap(async function (req, res) {
-		const transaction = await Transaction
-			.scope('with:items', 'skip:superTransactions')
+		const superTransaction = await Transaction
 			.findOne({
 				where: {
-					userId: req.user_id,
 					paypalECToken: req.query.ecToken
 				}
 			});
 
-		if (!transaction) {
+		if (!superTransaction) {
 			throw new HttpError(404, 'not_found');
 		}
 
-		res.status(200).json({transaction});
+		const transactions = await superTransaction.getSubTransactions({
+			scope: 'with:items',
+			where: {
+				userId: req.user_id
+			}
+		});
+
+
+		res.status(200).json({transactions});
 		req.stop = true;
 	})
 );
@@ -239,11 +245,11 @@ transactions.post('/cart',
 		});
 
 		function tax(price) {
-			return _.round(price * 0.1, 2);
+			return _.ceil(price * 0.07, 2);
 		}
 
 		function priceAT(price) {
-			return _.round(price - tax(price), 2);
+			return _.floor(price - tax(price), 2);
 		}
 
 		const taxAmount = _.round(_.sumBy(beats, beat => tax(beat.price)), 2);

@@ -103,11 +103,43 @@ describe('api /transactions', function () {
 	});
 
 	describe('GET /:id', function () {
-		it('should return transaction info');
+		beforeEach(async function () {
+			await agent.post('/api/transactions/cart')
+				.set('Authorization', accessTokenBuyer)
+				.send();
+		});
+
+		it('should return transaction info', async function () {
+			const transactions = await agent.get('/api/transactions')
+				.set('Authorization', accessTokenBuyer);
+
+			const transaction = await agent.get(`/api/transactions/${transactions.body.transactions[0].id}`)
+				.set('Authorization', accessTokenBuyer);
+
+			transaction.statusCode.should.be.equal(200);
+			transaction.body.should.have.property('transaction');
+			transaction.body.transaction.should.have.property('items');
+		});
 	});
 
 	describe('GET /getByPayPalECToken', function () {
-		it('should return transaction info');
+		let ecToken;
+
+		beforeEach(async function () {
+			const {body: {url}} = await agent.post('/api/transactions/cart')
+				.set('Authorization', accessTokenBuyer)
+				.send();
+
+			ecToken = url.split('token=')[1];
+		});
+
+		it('should return transaction info', async function () {
+			const transactionInfo = await agent.get(`/api/transactions/getByPayPalECToken?ecToken=${ecToken}`)
+				.set('Authorization', accessTokenBuyer);
+
+			transactionInfo.statusCode.should.be.equal(200);
+			transactionInfo.body.transactions.length.should.be.equal(2);
+		});
 	});
 
 	describe('POST /finalizeByPayPalECToken', function () {
