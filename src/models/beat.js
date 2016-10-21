@@ -1,6 +1,8 @@
 import Sequelize from 'sequelize';
+import config from 'config';
+import _ from 'lodash';
 import dbConnection from 'dbConnection';
-import initializer from './initializer';
+import initializer from './initializer'
 
 export const Beat = dbConnection.define('beat', {
 	name: {
@@ -28,7 +30,15 @@ export const Beat = dbConnection.define('beat', {
 			fields: ['name'],
 			operator: 'gist_trgm_ops'
 		}
-	]
+	],
+	getterMethods: {
+		tax() {
+			return _.ceil(this.price * config.tax, 2)
+		},
+		priceAfterTax() {
+			return _.ceil(this.price - this.tax, 2);
+		}
+	}
 });
 
 initializer.after(['models'], function ({Genre, User, BeatFile}) {

@@ -32,7 +32,7 @@ import {createAndActivateUser, createBeat} from 'routes/testUtils';
 			beatId: beatId3
 		});
 
-	const createTransaction = await agent.post('/api/cart/my/transaction')
+	const createTransaction = await agent.post('/api/transactions/cart')
 		.set('Authorization', accessTokenBuyer)
 		.send();
 

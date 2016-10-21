@@ -1,5 +1,4 @@
 import {Router} from 'express';
-import sequelize from 'sequelize';
 import {validate, authorizedOnly} from 'middlewares';
 import {HttpError} from 'HttpError';
 import paypal from 'paypal';
@@ -75,10 +74,9 @@ transactions.get('/getByPayPalECToken',
 const updateTransactionInfoByPayPalECToken = wrap(
 	async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:items', 'skip:superTransactions')
+			.scope('with:items')
 			.findOne({
 				where: {
-					userId: req.user_id,
 					paypalECToken: req.body.ecToken
 				}
 			});
@@ -151,10 +149,9 @@ transactions.post('/finalizeByPayPalECToken',
 	}),
 	wrap(async function (req, res) {
 		const transaction = await Transaction
-			.scope('with:items', 'skip:superTransactions')
+			.scope('with:items')
 			.findOne({
 				where: {
-					userId: req.user_id,
 					paypalECToken: req.body.ecToken
 				}
 			});
@@ -222,37 +219,25 @@ transactions.get('/:id(\\d+)',
 
 transactions.post('/cart',
 	wrap(async function (req, res) {
-		const beats = await CartItem
-			.findAll({
-				where: {
-					userId: req.user_id
-				},
-				include: [{
-					model: Beat,
-					include: [
-						{model: User}
-					]
-				}]
-			})
-			.map(_.property('beat'));
+		const beats = await CartItem.findAll({
+			where: {
+				userId: req.user_id
+			},
+			include: [{
+				model: Beat,
+				include: [
+					{model: User}
+				]
+			}]
+		}).map(_.property('beat'));
 
 		const transaction = await Transaction.create({
-			userId: req.user_id,
-			tx: sequelize.literal(`'ODY-' || nextval('transactions_tx_seq')`),
 			type: 'beats_purchase',
 			amount: _.round(_.sumBy(beats, 'price'), 2),
 			status: 'wait'
 		});
 
-		function tax(price) {
-			return _.ceil(price * 0.07, 2);
-		}
-
-		function priceAT(price) {
-			return _.floor(price - tax(price), 2);
-		}
-
-		const taxAmount = _.round(_.sumBy(beats, beat => tax(beat.price)), 2);
+		const tax = _.round(_.sumBy(beats, 'tax'), 2);
 		const payments = [
 			{
 				currency: 'USD',
@@ -262,36 +247,24 @@ transactions.post('/cart',
 				id: `${transaction.tx}-TAX`,
 				items: [{
 					id: 'ODYOPLUG-TAX',
-					amount: taxAmount
+					amount: tax
 				}]
 			}
 		];
 
 		const beatsByUser = _.groupBy(beats, 'userId');
 		for (const userId of Object.keys(beatsByUser)) {
-			payments.push({
-				currency: 'USD',
-				action: 'SALE',
-				description: beatsByUser[userId][0].user.name,
-				receiver: beatsByUser[userId][0].user.paypalReceiver || beatsByUser[userId][0].user.email,
-				id: `${transaction.tx}-${userId}`,
-				items: beatsByUser[userId].map(
-					beat => ({
-						name: beat.name,
-						id: `BEAT-${beat.id}`,
-						amount: priceAT(beat.price)
-					})
-				)
-			});
+			const user = beatsByUser[userId][0].user;
+			const userBeats = beatsByUser[userId];
 
 			const subTransaction = await transaction.createSubTransaction({
 				userId: req.user_id,
 				tx: `${transaction.tx}-${userId}`,
 				type: 'beats_purchase',
-				amount: _.sumBy(beatsByUser[userId], 'price'),
+				amount: _.round(_.sumBy(userBeats, 'price'), 2),
 				status: 'wait',
-				paypalSeller: beatsByUser[userId][0].user.paypalReceiver || beatsByUser[userId][0].user.email,
-				itemNames: beatsByUser[userId].map(_.property('name')).join(',')
+				paypalSeller: user.paypalReceiver || user.email,
+				itemNames: _.map(userBeats, 'name').join(',')
 			});
 
 			for (const beat of beatsByUser[userId]) {
@@ -301,6 +274,21 @@ transactions.post('/cart',
 					beatId: beat.id
 				});
 			}
+
+			payments.push({
+				currency: 'USD',
+				action: 'SALE',
+				description: user.name,
+				receiver: user.paypalReceiver || user.email,
+				id: subTransaction.tx,
+				items: userBeats.map(
+					beat => ({
+						name: beat.name,
+						id: `BEAT-${beat.id}`,
+						amount: beat.priceAfterTax
+					})
+				)
+			});
 		}
 
 		const expressCheckout = await paypal.setExpressCheckout({
@@ -309,11 +297,7 @@ transactions.post('/cart',
 			payments: payments
 		});
 
-		transaction.set({
-			payments: payments.length,
-			paypalECToken: expressCheckout.TOKEN
-		});
-
+		transaction.paypalECToken = expressCheckout.TOKEN;
 		await transaction.save();
 
 		res.status(200).json({

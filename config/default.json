@@ -64,5 +64,6 @@
 		"http://odyoplug.local",
 		"http://odyoplug.demo.incode-systems.com",
 		"http://odyoplug.local:8080"
-	]
+	],
+	"tax": 0.07
 }

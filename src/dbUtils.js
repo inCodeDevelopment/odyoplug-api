@@ -30,7 +30,7 @@ export async function createSequences() {
 			MAXVALUE 9223372036854775807
 			START 1
 			CACHE 1
-			OWNED BY transactions.id;
+			OWNED BY transactions.tx;
 	`);
 }
 

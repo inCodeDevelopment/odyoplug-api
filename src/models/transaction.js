@@ -4,7 +4,8 @@ import initializer from './initializer';
 
 export const Transaction = dbConnection.define('transaction', {
 	tx: {
-		type: Sequelize.STRING
+		type: Sequelize.STRING,
+		defaultValue: () => Sequelize.literal(`'ODY-' || nextval('transactions_tx_seq')`)
 	},
 	type: {
 		type: Sequelize.ENUM('beats_purchase', 'beats_sell', 'tax'),
