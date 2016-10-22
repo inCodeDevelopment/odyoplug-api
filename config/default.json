@@ -9,6 +9,7 @@
 	"jwt": {
 		"secret": "iuh48yq3ycg0duh03uch048h034c031c"
 	},
+	"passwordBcryptRounds": 8,
 	"cookieSessionSecret": "dij4f02hg-24g95gf24f2f",
 	"resolveBaseURLFromReferrer": true,
 	"baseURL": "http://localhost:3000/",

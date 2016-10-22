@@ -2,5 +2,6 @@
 	"db": {
 		"name": "odyoplug-test"
 	},
+	"passwordBcryptRounds": 0,
 	"port": 3000
 }

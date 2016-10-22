@@ -1,4 +1,5 @@
 import Sequelize from 'sequelize';
+import config from 'config';
 import dbConnection from 'dbConnection';
 import bcrypt from 'bcrypt-as-promised';
 import initializer from './initializer';
@@ -48,7 +49,7 @@ export const User = dbConnection.define('user', {
 	timestamps: false,
 	classMethods: {
 		hashPassword(password) {
-			return bcrypt.hash(password, 8)
+			return bcrypt.hash(password, config.passwordBcryptRounds)
 		},
 		findByLogin(login) {
 			const query = login.indexOf('@') === -1
@@ -100,7 +101,7 @@ export const User = dbConnection.define('user', {
 			const [updated] = await this.update({
 					active: true,
 					passwordRestoreToken: null,
-					hash: await bcrypt.hash(password, 8)
+					hash: await bcrypt.hash(password, config.passwordBcryptRounds)
 				},
 				{
 					where: {
@@ -114,7 +115,7 @@ export const User = dbConnection.define('user', {
 	},
 	instanceMethods: {
 		async setPassword(password) {
-			this.set('hash', await bcrypt.hash(password, 8));
+			this.set('hash', await bcrypt.hash(password, config.passwordBcryptRounds));
 		},
 		async verifyPassword(password) {
 			try {
