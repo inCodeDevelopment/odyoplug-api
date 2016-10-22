@@ -4,7 +4,7 @@ import dbConnection from 'dbConnection';
 export const Genre = dbConnection.define('genre', {
 	name: {
 		type: Sequelize.STRING,
-		allowNull: true
+		allowNull: false
 	}
 }, {
 	timestamps: false

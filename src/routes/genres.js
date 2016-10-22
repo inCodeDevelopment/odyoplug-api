@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import config from 'config';
 
 import { Genre } from 'db';
 

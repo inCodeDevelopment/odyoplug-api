@@ -150,8 +150,42 @@ export const User = dbConnection.define('user', {
 	}
 });
 
-initializer.after(['models'], function ({Beat}) {
+initializer.after(['models'], function ({Beat, License}) {
 	User.hasMany(Beat, {
 		onDelete: 'CASCADE'
+	});
+
+	User.hasMany(License);
+
+	User.afterCreate(async function createDefaultLicenses(user) {
+		await user.createLicense({
+			name: 'Non exclusive',
+			mp3: true,
+			wav: false,
+			trackout: true,
+			discounts: true,
+			enabled: true,
+			default: true
+		});
+
+		await user.createLicense({
+			name: 'Exclusive',
+			mp3: true,
+			wav: false,
+			trackout: true,
+			discounts: true,
+			enabled: true,
+			default: true
+		});
+
+		await user.createLicense({
+			name: 'Premium',
+			mp3: true,
+			wav: false,
+			trackout: true,
+			discounts: true,
+			enabled: true,
+			default: true
+		});
 	});
 });

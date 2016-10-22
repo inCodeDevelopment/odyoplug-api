@@ -864,7 +864,7 @@ definitions:
             <<: *InputLicenseProperties
             id:
                 type: number
-            default:
+            defaultLicense:
                 type: boolean
     BeatFile:
         type: object

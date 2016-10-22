@@ -10,5 +10,6 @@ export {
 	Genre,
 	Transaction,
 	TransactionItem,
-	User
+	User,
+	License
 } from 'models';

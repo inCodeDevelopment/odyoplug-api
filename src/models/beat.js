@@ -41,7 +41,7 @@ export const Beat = dbConnection.define('beat', {
 	}
 });
 
-initializer.after(['models'], function ({Genre, User, BeatFile}) {
+initializer.after(['models'], function ({Genre, User, BeatFile, License}) {
 	Beat.belongsTo(Genre);
 
 	Beat.belongsTo(User, {
@@ -61,6 +61,13 @@ initializer.after(['models'], function ({Genre, User, BeatFile}) {
 		]
 	});
 	initializer.did('Beat scope with:file');
+
+	Beat.addScope('with:license', {
+		include: [{
+			model: License
+		}]
+	});
+	initializer.did('Beat scope with:license');
 
 	Beat.addScope('orderBy:createdAt_desc', {
 		order: [

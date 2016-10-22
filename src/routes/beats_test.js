@@ -1,4 +1,3 @@
-import config from 'config';
 import supertest from 'supertest';
 import {clear as clearDb} from 'dbUtils';
 import {createAndActivateUser} from './testUtils';
