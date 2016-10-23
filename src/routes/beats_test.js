@@ -58,7 +58,7 @@ describe('api /beats', function () {
 	});
 
 	describe('POST /', function () {
-		let fileId;
+		let fileId, licenseId;
 
 		beforeEach(async function () {
 			const uploadBeatFileResponse = await agent.post('/api/beats/files')
@@ -67,6 +67,11 @@ describe('api /beats', function () {
 				.send({});
 
 			fileId = uploadBeatFileResponse.body.file.id;
+
+			licenseId = (
+				await agent.get('/api/licenses')
+					.set('Authorization', accessToken)
+			).body.licenses[0].id;
 		});
 
 		it('should create beat', async function () {
@@ -75,7 +80,9 @@ describe('api /beats', function () {
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
+					prices: {
+						[licenseId]: 3.99
+					},
 					genreId: 13,
 					fileId: fileId
 				});
@@ -87,7 +94,7 @@ describe('api /beats', function () {
 				genreId: 13,
 				name: "FooBar",
 				tempo: 145,
-				price: 3.99
+				basePrice: 3.99
 			});
 			beat.should.have.properties('id', 'userId', 'createdAt', 'updatedAt');
 			beat.file.should.containEql({
@@ -100,7 +107,9 @@ describe('api /beats', function () {
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
+					prices: {
+						[licenseId]: 3.99
+					},
 					genreId: 13,
 					fileId: fileId + 100
 				});
@@ -120,7 +129,9 @@ describe('api /beats', function () {
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
+					prices: {
+						[licenseId]: 3.99
+					},
 					genreId: 1300,
 					fileId: fileId
 				});
@@ -140,7 +151,9 @@ describe('api /beats', function () {
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
+					prices: {
+						[licenseId]: 3.99
+					},
 					genreId: 13,
 					fileId: fileId
 				});
@@ -152,7 +165,9 @@ describe('api /beats', function () {
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
+					prices: {
+						[licenseId]: 3.99
+					},
 					genreId: 13,
 					fileId: fileId
 				});
@@ -181,13 +196,19 @@ describe('api /beats', function () {
 
 			const fileId = uploadBeatFileResponse.body.file.id;
 
+			const licenseId = (
+				await agent.get('/api/licenses')
+					.set('Authorization', accessToken)
+			).body.licenses[0].id;
+
 			const createBeatResponse = await agent.post('/api/beats')
 				.set('Authorization', accessToken)
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
-					genreId: 13,
+					prices: {
+						[licenseId]: 3.99
+					}, genreId: 13,
 					fileId: fileId
 				});
 
@@ -227,13 +248,19 @@ describe('api /beats', function () {
 
 			const fileId = uploadBeatFileResponse.body.file.id;
 
+			const licenseId = (
+				await agent.get('/api/licenses')
+					.set('Authorization', accessToken)
+			).body.licenses[0].id;
+
 			const createBeatResponse = await agent.post('/api/beats')
 				.set('Authorization', accessToken)
 				.send({
 					name: "FooBar",
 					tempo: 145,
-					price: 3.99,
-					genreId: 13,
+					prices: {
+						[licenseId]: 3.99
+					}, genreId: 13,
 					fileId: fileId
 				});
 
@@ -260,14 +287,20 @@ describe('api /beats', function () {
 		let userId;
 
 		beforeEach(async function () {
+			const licenseId = (
+				await agent.get('/api/licenses')
+					.set('Authorization', accessToken)
+			).body.licenses[0].id;
+
 			for (let i = 0; i < 3; i++) {
 				const res = await agent.post('/api/beats')
 					.set('Authorization', accessToken)
 					.send({
 						name: "FooBar",
 						tempo: 145,
-						price: 3.99,
-						genreId: 13,
+						prices: {
+							[licenseId]: 3.99
+						}, genreId: 13,
 						fileId: (await agent.post('/api/beats/files')
 							.set('Authorization', accessToken)
 							.attach('beatFile', 'src/assets_test/audio.mp3')
@@ -288,6 +321,11 @@ describe('api /beats', function () {
 
 	describe('GET /search', function () {
 		beforeEach(async function () {
+			const licenseId = (
+				await agent.get('/api/licenses')
+					.set('Authorization', accessToken)
+			).body.licenses[0].id;
+
 			const beats = [
 				{name: 'Foo Bar', genreId: 2},
 				{name: 'Hello World', genreId: 2},
@@ -302,8 +340,9 @@ describe('api /beats', function () {
 					.send({
 						...beat,
 						tempo: 145,
-						price: 3.99,
-						fileId: (await agent.post('/api/beats/files')
+						prices: {
+							[licenseId]: 3.99
+						}, fileId: (await agent.post('/api/beats/files')
 							.set('Authorization', accessToken)
 							.attach('beatFile', 'src/assets_test/audio.mp3')
 							.send({})).body.file.id

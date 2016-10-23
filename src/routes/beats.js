@@ -26,11 +26,10 @@ const inputBeatSchema = {
 	},
 	fileId: {
 		errorMessage: 'Invalid fileId'
-	},
-	price: {
-		errorMessage: 'Invalid price'
 	}
 };
+
+const inputBeatFields = _.keys(inputBeatSchema);
 
 const catchBeatConstraintErrors = catchSequelizeConstraintErrors({
 	'fKey:genreId': 'Invalid genreId',
@@ -43,14 +42,15 @@ const beats = Router();
 beats.post('/',
 	authorizedOnly,
 	validate({
-		body: validate.notEmpty(inputBeatSchema, [
-			'name', 'tempo', 'genreId', 'fileId', 'price'
-		])
+		body: validate.notEmpty(inputBeatSchema, inputBeatFields)
 	}),
 	wrap(async function (req, res) {
-		const beat = await Beat.create({
-			...req.body,
-			userId: req.user_id
+		const beat = await req.user.createBeat({
+			..._.pick(req.body, inputBeatFields),
+			prices: req.body.prices,
+			basePrice: _.min(
+				_.values(req.body.prices)
+			)
 		}).catch(catchBeatConstraintErrors);
 
 		beat.setDataValue('file', await beat.getFile());

@@ -13,9 +13,12 @@ export const Beat = dbConnection.define('beat', {
 		type: Sequelize.INTEGER,
 		allowNull: false
 	},
-	price: {
+	basePrice: {
 		type: Sequelize.FLOAT,
-		allowNull: false
+		allowNull: true
+	},
+	prices: {
+		type: Sequelize.FLOAT
 	},
 	fileId: {
 		type: Sequelize.INTEGER,
