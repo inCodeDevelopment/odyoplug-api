@@ -10,13 +10,13 @@ import {HttpError} from 'HttpError';
 const cart = Router();
 
 const returnCart = wrap(async function (req, res) {
-	const beats = await CartItem.scope('with:beats').findAll({
+	const cartItems = await CartItem.scope('with:beats').findAll({
 		where: req.cart
-	}).map(_.property('beat'));
+	});
 
 	res.status(200).json({
 		cart: {
-			beats
+			cartItems
 		}
 	});
 });

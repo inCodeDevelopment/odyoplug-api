@@ -451,8 +451,11 @@ paths:
                             type: string
                         tempo:
                             type: number
-                        price:
-                            type: number
+                        pricec:
+                            type: object
+                            properties:
+                                __licenseId__:
+                                    type: number
                         genreId:
                             type: number
                         fileId:
@@ -533,9 +536,11 @@ paths:
                   name: body
                   schema:
                       type: object
-                      required: [beatId]
+                      required: [beatId, licenseId]
                       properties:
                           beatId:
+                              type: number
+                          licenseId:
                               type: number
             responses:
                 '200':
@@ -780,10 +785,15 @@ responses:
                 cart:
                     type: object
                     properties:
-                        beats:
+                        cartItems:
                             type: array
                             beats:
-                                $ref: '#/definitions/Beat'
+                                type: object
+                                properties:
+                                    licenseId:
+                                        type: number
+                                    beat:
+                                        $ref: '#/definitions/Beat'
     NotFound:
         description: Entity not found
         schema:
@@ -906,8 +916,11 @@ definitions:
                 type: string
             tempo:
                 type: number
-            price:
-                type: number
+            prices:
+                type: object
+                propeties:
+                    __licenseId__:
+                        type: number
             file:
                 type: object
                 properties:

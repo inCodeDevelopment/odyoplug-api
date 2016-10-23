@@ -45,6 +45,12 @@ beats.post('/',
 		body: validate.notEmpty(inputBeatSchema, inputBeatFields)
 	}),
 	wrap(async function (req, res) {
+		for (const licenseId of _.keys(req.body.prices)) {
+			if (!(await req.user.hasLicense(licenseId))) {
+				throw new HttpError(403, 'access_denied');
+			}
+		}
+
 		const beat = await req.user.createBeat({
 			..._.pick(req.body, inputBeatFields),
 			prices: req.body.prices,
@@ -147,7 +153,21 @@ beats.post('/:id(\\d+)',
 		body: inputBeatSchema
 	}),
 	wrap(async function (req, res) {
-		const [updated] = await Beat.update(req.body, {
+		const update = _.pick(req.body, inputBeatFields);
+		if (req.body.prices) {
+			for (const licenseId of _.keys(req.body.prices)) {
+				if (!(await req.user.hasLicense(licenseId))) {
+					throw new HttpError(403, 'access_denied');
+				}
+			}
+
+			update.prices = req.body.prices;
+			update.basePrice = _.min(
+				_.values(req.body.prices)
+			);
+		}
+
+		const [updated] = await Beat.update(update, {
 			where: {
 				userId: req.user_id,
 				id: req.params.id
