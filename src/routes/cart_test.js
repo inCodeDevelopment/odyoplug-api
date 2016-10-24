@@ -21,19 +21,21 @@ describe('api /cart', function () {
 	});
 
 	describe('GET /:id', function () {
-		let beatId, buyerAccessToken;
+		let beatId, licenseId, buyerAccessToken;
 
 		beforeEach('create beat', async function () {
 			buyerAccessToken = await createAndActivateUser('buyer@gmail.com', 'buyer', '123123');
 			const accessToken = await createAndActivateUser('test@gmail.com', 'test', '123123');
 			beatId = await createBeat(accessToken);
+			licenseId = 4;
 		});
 
 		it('should return beats in my cart', async function () {
 			await agent.post('/api/cart/my/addBeat')
 				.set('Authorization', buyerAccessToken)
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: licenseId
 				});
 
 			const cart = await agent.get('/api/cart/my')
@@ -42,9 +44,11 @@ describe('api /cart', function () {
 			cart.statusCode.should.be.equal(200);
 			cart.body.should.containDeep({
 				cart: {
-					beats: [
+					cartItems: [
 						{
-							id: beatId
+							beat: {
+								id: beatId
+							}
 						}
 					]
 				}
@@ -53,7 +57,8 @@ describe('api /cart', function () {
 		it('should return beats in guests cart', async function () {
 			await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: licenseId
 				});
 
 			const cart = await agent.get('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405');
@@ -62,9 +67,11 @@ describe('api /cart', function () {
 
 			cart.body.should.containDeep({
 				cart: {
-					beats: [
+					cartItems: [
 						{
-							id: beatId
+							beat: {
+								id: beatId
+							}
 						}
 					]
 				}
@@ -82,7 +89,8 @@ describe('api /cart', function () {
 
 			await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 4
 				});
 		});
 
@@ -94,9 +102,11 @@ describe('api /cart', function () {
 			importCart.statusCode.should.be.equal(200);
 			importCart.body.should.containDeep({
 				cart: {
-					beats: [
+					cartItems: [
 						{
-							id: beatId
+							beat: {
+								id: beatId
+							}
 						}
 					]
 				}
@@ -115,15 +125,18 @@ describe('api /cart', function () {
 		it('should add beat', async function () {
 			const addBeat = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 1
 				});
 
 			addBeat.statusCode.should.be.equal(200);
 			addBeat.body.should.containDeep({
 				cart: {
-					beats: [
+					cartItems: [
 						{
-							id: beatId
+							beat: {
+								id: beatId
+							}
 						}
 					]
 				}
@@ -133,16 +146,18 @@ describe('api /cart', function () {
 		it('should not add dublicate beat', async function () {
 			await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 1
 				});
 
 			const addBeat = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 1
 				});
 
 			addBeat.statusCode.should.be.equal(200);
-			addBeat.body.cart.beats.length.should.be.equal(1);
+			addBeat.body.cart.cartItems.length.should.be.equal(1);
 		});
 	});
 
@@ -155,7 +170,8 @@ describe('api /cart', function () {
 
 			const addBeat = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 0
 				});
 		});
 
@@ -166,7 +182,7 @@ describe('api /cart', function () {
 				});
 
 			removeBeat.statusCode.should.be.equal(200);
-			removeBeat.body.cart.beats.length.should.be.equal(0);
+			removeBeat.body.cart.cartItems.length.should.be.equal(0);
 		});
 	});
 
@@ -179,7 +195,8 @@ describe('api /cart', function () {
 
 			const addBeat = await agent.post('/api/cart/1f9ceb00-59f9-4d16-a161-2b4491313405/addBeat')
 				.send({
-					beatId: beatId
+					beatId: beatId,
+					licenseId: 0
 				});
 		});
 
@@ -188,7 +205,7 @@ describe('api /cart', function () {
 				.send();
 
 			removeBeats.statusCode.should.be.equal(200);
-			removeBeats.body.cart.beats.length.should.be.equal(0);
+			removeBeats.body.cart.cartItems.length.should.be.equal(0);
 		});
 	});
 });

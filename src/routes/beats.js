@@ -45,9 +45,13 @@ beats.post('/',
 		body: validate.notEmpty(inputBeatSchema, inputBeatFields)
 	}),
 	wrap(async function (req, res) {
+		if (!req.body.prices) {
+			throw new HttpError.invalidInput('prices', 'Invalid prices object', req.body.prices);
+		}
+
 		for (const licenseId of _.keys(req.body.prices)) {
 			if (!(await req.user.hasLicense(licenseId))) {
-				throw new HttpError(403, 'access_denied');
+				throw new HttpError.invalidInput('prices', 'Invalid prices object', req.body.prices);
 			}
 		}
 

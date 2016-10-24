@@ -59,6 +59,10 @@ export async function createBeat(accessToken, name) {
 		.attach('beatFile', 'src/assets_test/audio.mp3')
 		.send({});
 
+	const licenses = await agent.get('/api/licenses')
+		.set('Authorization', accessToken);
+	const licenseId = licenses.body.licenses[0].id;
+
 	const fileId = uploadBeatFileResponse.body.file.id;
 
 	const createBeatResponse = await agent.post('/api/beats')
@@ -66,7 +70,9 @@ export async function createBeat(accessToken, name) {
 		.send({
 			name: name || "FooBar",
 			tempo: 145,
-			price: 3.99,
+			prices: {
+				[licenseId]: 3.99
+			},
 			genreId: 13,
 			fileId: fileId
 		});

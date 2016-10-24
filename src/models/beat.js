@@ -18,7 +18,7 @@ export const Beat = dbConnection.define('beat', {
 		allowNull: true
 	},
 	prices: {
-		type: Sequelize.FLOAT
+		type: Sequelize.HSTORE
 	},
 	fileId: {
 		type: Sequelize.INTEGER,
@@ -34,12 +34,15 @@ export const Beat = dbConnection.define('beat', {
 			operator: 'gist_trgm_ops'
 		}
 	],
-	getterMethods: {
-		tax() {
-			return _.ceil(this.price * config.tax, 2)
+	instanceMethods: {
+		price(licenseId) {
+			return parseFloat(this.prices[licenseId.toString()]);
 		},
-		priceAfterTax() {
-			return _.ceil(this.price - this.tax, 2);
+		tax(licenseId) {
+			return _.ceil(this.price(licenseId) * config.tax, 2);
+		},
+		priceAfterTax(licenseId) {
+			return _.ceil(this.price(licenseId) - this.tax(licenseId), 2);
 		}
 	}
 });

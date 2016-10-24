@@ -10,6 +10,10 @@ export async function createExtensions() {
 	await db.query(`
 		CREATE EXTENSION IF NOT EXISTS pg_trgm;
 	`);
+
+	await db.query(`
+		CREATE EXTENSION IF NOT EXISTS hstore;
+	`);
 }
 
 export async function createSequences() {

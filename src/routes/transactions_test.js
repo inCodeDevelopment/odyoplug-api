@@ -25,19 +25,22 @@ describe('api /transactions', function () {
 		await agent.post('/api/cart/my/addBeat')
 			.set('Authorization', accessTokenBuyer)
 			.send({
-				beatId: beatId
+				beatId: beatId,
+				licenseId: 1
 			});
 
 		await agent.post('/api/cart/my/addBeat')
 			.set('Authorization', accessTokenBuyer)
 			.send({
-				beatId: beatId2
+				beatId: beatId2,
+				licenseId: 4
 			});
 
 		await agent.post('/api/cart/my/addBeat')
 			.set('Authorization', accessTokenBuyer)
 			.send({
-				beatId: beatId3
+				beatId: beatId3,
+				licenseId: 4
 			});
 	});
 

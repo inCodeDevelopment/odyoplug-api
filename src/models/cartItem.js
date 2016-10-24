@@ -6,6 +6,10 @@ export const CartItem = dbConnection.define('cartItem', {
 	cartId: {
 		type: Sequelize.STRING,
 		allowNull: true
+	},
+	licenseId: {
+		type: Sequelize.INTEGER,
+		allowNull: false
 	}
 }, {
 	indexes: [

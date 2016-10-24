@@ -219,7 +219,7 @@ transactions.get('/:id(\\d+)',
 
 transactions.post('/cart',
 	wrap(async function (req, res) {
-		const beats = await CartItem.findAll({
+		const cartItems = await CartItem.findAll({
 			where: {
 				userId: req.user_id
 			},
@@ -229,15 +229,19 @@ transactions.post('/cart',
 					{model: User}
 				]
 			}]
-		}).map(_.property('beat'));
+		});
 
 		const transaction = await Transaction.create({
 			type: 'beats_purchase',
-			amount: _.round(_.sumBy(beats, 'price'), 2),
+			amount: _.round(_.sumBy(cartItems, cartItem =>
+				cartItem.beat.price(cartItem.licenseId)
+			), 2),
 			status: 'wait'
 		});
 
-		const tax = _.round(_.sumBy(beats, 'tax'), 2);
+		const tax = _.round(_.sumBy(cartItems, cartItem =>
+			cartItem.beat.tax(cartItem.licenseId)
+		), 2);
 		const payments = [
 			{
 				currency: 'USD',
@@ -252,26 +256,28 @@ transactions.post('/cart',
 			}
 		];
 
-		const beatsByUser = _.groupBy(beats, 'userId');
-		for (const userId of Object.keys(beatsByUser)) {
-			const user = beatsByUser[userId][0].user;
-			const userBeats = beatsByUser[userId];
+		const cartItemsByUser = _.groupBy(cartItems, 'beat.userId');
+		for (const userId of Object.keys(cartItemsByUser)) {
+			const user = cartItemsByUser[userId][0].beat.user;
+			const userCartItems = cartItemsByUser[userId];
 
 			const subTransaction = await transaction.createSubTransaction({
 				userId: req.user_id,
 				tx: `${transaction.tx}-${userId}`,
 				type: 'beats_purchase',
-				amount: _.round(_.sumBy(userBeats, 'price'), 2),
+				amount: _.round(_.sumBy(userCartItems, cartItem =>
+					cartItem.beat.price(cartItem.licenseId)
+				), 2),
 				status: 'wait',
 				paypalSeller: user.paypalReceiver || user.email,
-				itemNames: _.map(userBeats, 'name').join(',')
+				itemNames: _.map(userCartItems, 'beat.name').join(',')
 			});
 
-			for (const beat of beatsByUser[userId]) {
+			for (const cartItem of userCartItems) {
 				await subTransaction.createItem({
-					price: beat.price,
+					price: cartItem.beat.price(cartItem.licenseId),
 					type: 'beat',
-					beatId: beat.id
+					beatId: cartItem.beat.id
 				});
 			}
 
@@ -281,11 +287,11 @@ transactions.post('/cart',
 				description: user.name,
 				receiver: user.paypalReceiver || user.email,
 				id: subTransaction.tx,
-				items: userBeats.map(
-					beat => ({
-						name: beat.name,
-						id: `BEAT-${beat.id}`,
-						amount: beat.priceAfterTax
+				items: userCartItems.map(
+					cartItem => ({
+						name: cartItem.beat.name,
+						id: `BEAT-${cartItem.beat.id}`,
+						amount: cartItem.beat.priceAfterTax(cartItem.licenseId)
 					})
 				)
 			});

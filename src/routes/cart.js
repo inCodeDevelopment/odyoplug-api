@@ -4,7 +4,6 @@ import {validate, authorizedOnly} from 'middlewares';
 import uuid from 'node-uuid';
 import {wrap} from './utils';
 import {CartItem, Beat, User} from 'db';
-import _ from 'lodash';
 import {HttpError} from 'HttpError';
 
 const cart = Router();
@@ -98,7 +97,12 @@ cart.post('/:id/addBeat',
 	validate({
 		body: {
 			beatId: {
+				notEmpty: true,
 				errorMessage: 'Invalid beatId'
+			},
+			licenseId: {
+				notEmpty: true,
+				errorMessage: 'Invalid licenseId'
 			}
 		}
 	}),
@@ -106,6 +110,10 @@ cart.post('/:id/addBeat',
 		const beat = await Beat.findById(req.body.beatId, {
 			include: [{model: User}]
 		});
+
+		if (!beat.prices[req.body.licenseId.toString()]) {
+			throw new HttpError.invalidInput('licenseId', 'Invalid license selected');
+		}
 
 		if (!beat.user.paypalReceiver && !beat.user.email) {
 			throw new HttpError(422, 'invalid_paypal_receiver', {
@@ -116,7 +124,8 @@ cart.post('/:id/addBeat',
 		try {
 			const cartItem = await CartItem.create({
 				...req.cart,
-				beatId: req.body.beatId
+				beatId: req.body.beatId,
+				licenseId: req.body.licenseId
 			});
 		} catch (err) {
 			if (err instanceof sequelize.UniqueConstraintError) {
