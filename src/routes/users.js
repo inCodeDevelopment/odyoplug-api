@@ -300,6 +300,14 @@ users.get('/me',
 	})
 );
 
+users.get('/:id(\\d+)',
+	wrap(async function (req, res) {
+		const user = await User.scope('with:licenses').findById(req.params.id);
+
+		res.status(200).json({user});
+	})
+);
+
 users.post('/me',
 	authorizedOnly,
 	validate({

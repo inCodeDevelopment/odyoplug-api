@@ -158,6 +158,14 @@ initializer.after(['models'], function ({Beat, License}) {
 
 	User.hasMany(License);
 
+	User.addScope('with:licenses', {
+		include: [
+			{
+				model: License
+			}
+		]
+	});
+
 	User.afterCreate(async function createDefaultLicenses(user) {
 		await user.createLicense({
 			name: 'Non exclusive',
