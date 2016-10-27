@@ -165,6 +165,7 @@ initializer.after(['models'], function ({Beat, License}) {
 			}
 		]
 	});
+	initializer.did('User scope with:licenses');
 
 	User.afterCreate(async function createDefaultLicenses(user) {
 		await user.createLicense({

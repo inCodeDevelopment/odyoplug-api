@@ -68,6 +68,17 @@ initializer.after(['models'], function ({Genre, User, BeatFile, License}) {
 	});
 	initializer.did('Beat scope with:file');
 
+	initializer.after(['User scope with:licenses'], function () {
+		Beat.addScope('with:user', {
+			include: [
+				{
+					model: User.scope('with:licenses')
+				}
+			]
+		});
+		initializer.did('Beat scope with:user');
+	});
+
 	Beat.addScope('with:license', {
 		include: [{
 			model: License

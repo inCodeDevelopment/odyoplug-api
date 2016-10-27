@@ -72,7 +72,7 @@ beats.post('/',
 beats.get('/user/:userId',
 	wrap(async function (req, res) {
 		const beats = await Beat
-			.scope('orderBy:createdAt_desc', 'with:file')
+			.scope('orderBy:createdAt_desc', 'with:file', 'with:user')
 			.findAll({
 				where: {
 					userId: req.params.userId
@@ -111,7 +111,7 @@ beats.get('/search',
 		}
 
 		const freshBeats = await Beat
-			.scope('orderBy:createdAt_desc', 'with:file')
+			.scope('orderBy:createdAt_desc', 'with:file', 'with:user')
 			.findAll({
 				where: {
 					...query,
@@ -123,7 +123,7 @@ beats.get('/search',
 			});
 
 		const beats = await Beat
-			.scope('orderBy:createdAt_desc', 'with:file')
+			.scope('orderBy:createdAt_desc', 'with:file', 'with:user')
 			.findAll({
 				where: {
 					...query,

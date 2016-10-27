@@ -316,6 +316,8 @@ describe('api /beats', function () {
 			getBeatsByUserResponse.statusCode.should.be.equal(200);
 			getBeatsByUserResponse.body.beats.length.should.be.equal(3);
 			getBeatsByUserResponse.body.beats[0].should.have.property('file');
+			getBeatsByUserResponse.body.beats[0].should.have.property('user');
+			getBeatsByUserResponse.body.beats[0].user.should.have.property('licenses');
 		});
 	});
 
