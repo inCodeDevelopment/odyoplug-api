@@ -47,6 +47,9 @@ export const User = dbConnection.define('user', {
 	},
 	subscription: {
 		type: Sequelize.JSON
+	},
+	subscriptionId: {
+		type: Sequelize.STRING
 	}
 }, {
 	timestamps: false,
@@ -149,6 +152,7 @@ export const User = dbConnection.define('user', {
 			delete values.passwordRestoreToken;
 			delete values.passwordRestoreToken;
 			delete values.subscription;
+			delete values.subscriptionId;
 
 			return values;
 		}

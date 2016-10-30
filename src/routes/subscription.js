@@ -139,6 +139,9 @@ subscription.post('/finalize',
 			payedUntil: date(`in 1 ${transaction.details.period}`).getTime(),
 			autoRenew: true
 		});
+		req.user.set('subscriptionId', recurringPaymentProfile.PROFILEID);
+
+		await req.user.save();
 
 		res.status(200).json({});
 	})
