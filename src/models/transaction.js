@@ -8,7 +8,7 @@ export const Transaction = dbConnection.define('transaction', {
 		defaultValue: () => Sequelize.literal(`'ODY-' || nextval('transactions_tx_seq')`)
 	},
 	type: {
-		type: Sequelize.ENUM('beats_purchase', 'beats_sell', 'tax'),
+		type: Sequelize.ENUM('beats_purchase', 'beats_sell', 'tax', 'subscription'),
 		allowNull: false
 	},
 	amount: {
@@ -33,6 +33,9 @@ export const Transaction = dbConnection.define('transaction', {
 	},
 	itemNames: {
 		type: Sequelize.STRING
+	},
+	details: {
+		type: Sequelize.HSTORE
 	}
 });
 

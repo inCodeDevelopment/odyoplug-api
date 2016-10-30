@@ -26,6 +26,8 @@ tags:
     description: Transaction operations
   - name: license
     description: License operations
+  - name: subscription
+    description: Subscription operations
 
 securityDefinitions:
     access_token:
@@ -775,6 +777,65 @@ paths:
             responses:
                 '200':
                     description: Success
+    /subscription:
+        get:
+            tags: [subscription]
+            summary: Get subscription info
+            operationId: subscriptionGetInfo
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            subscription:
+                                $ref: '#/definitions/Subscription'
+    /subscription/initialize:
+        post:
+            tags: [subscription]
+            summary: Initialize subscription
+            operationId: subscriptionInitialize
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        period:
+                            type: string
+                            enum: [month, year]
+                        rate:
+                            type: string
+                            enum: [pro, premium]
+            responses:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            url:
+                                type: string
+    /subscription/finalize:
+        post:
+            tags: [subscription]
+            summary: Finalize subscription
+            operationId: subscriptionFinalize
+            parameters:
+              - in: body
+                name: body
+                schema:
+                    type: object
+                    properties:
+                        ecToken:
+                            type: string
+            response:
+                '200':
+                    description: Success
+                    schema:
+                        type: object
+                        properties:
+                            subscription:
+                                $ref: '#/definitions/Subscription'
 
 responses:
     Cart:
@@ -833,6 +894,16 @@ definitions:
             paypalReceiver:
                 type: string
                 format: email
+    Subscription:
+        type: object
+        properties:
+            rate:
+                type: string
+                enum: [free, pro, premium]
+            payedUntil:
+                type: number
+            autoRenew:
+                type: boolean
     InputLicense:
         type: object
         properties: &InputLicenseProperties
@@ -945,6 +1016,7 @@ definitions:
            - beats_purchase
            - beat_sell
            - tax
+           - subscription
     Transaction:
         type: object
         properties:

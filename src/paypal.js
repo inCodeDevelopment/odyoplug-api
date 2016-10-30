@@ -74,6 +74,11 @@ function buildPaymentRequests(payments) {
 				paymentRequests[`L_PAYMENTREQUEST_${i}_ITEMURL${j}`] = payment.items[j].url;
 			}
 		}
+
+		if (payment.recurring) {
+			paymentRequests[`L_BILLINGTYPE${i}`] = 'RecurringPayments';
+			paymentRequests[`L_BILLINGAGREEMENTDESCRIPTION${i}`] = payment.description;
+		}
 	}
 	return paymentRequests;
 }
@@ -94,6 +99,46 @@ export default {
 		});
 
 		return transformResponse(payload);
+	},
+
+	async setSubscriptionExpressCheckout(options) {
+		const rawPayload = await paypalRequest({
+			qs: {
+				...authData,
+				METHOD: 'SetExpressCheckout',
+				VERSION: 204,
+				RETURNURL: options.returnURL,
+				CANCELURL: options.cancelURL,
+				NOSHIPPING: 1,
+				SOLUTIONTYPE: 'Mark',
+				...buildPaymentRequests(options.payments),
+				MAXAMT: options.maxAmount
+			}
+		});
+
+		return transformResponse(rawPayload);
+	},
+
+	async createRecurringPaymentsProfile(options, paymentRequests) {
+		const rawPayload = await paypalRequest({
+			qs: {
+				...authData,
+				METHOD: 'CreateRecurringPaymentsProfile',
+				VERSION: 204,
+				TOKEN: options.token,
+				PROFILESTARTDATE: options.startDate,
+				DESC: options.description,
+				AUTOBILLOUTAMT: 'AddToNextBilling',
+				BILLINGPERIOD: options.billingPeriod,
+				BILLINGFREQUENCY: 1,
+				AMT: options.amount,
+				CURRENCYCODE: 'USD',
+				EMAIL: options.email,
+				...paymentRequests
+			}
+		});
+
+		return transformResponse(rawPayload);
 	},
 
 	checkoutURL(token) {
@@ -118,7 +163,7 @@ export default {
 
 		payload.paymentRequests = [];
 
-		for (let i=0 ; payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`] ; i++) {
+		for (let i = 0; payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`]; i++) {
 			payload.paymentRequests.push({
 				id: payload[`PAYMENTREQUEST_${i}_PAYMENTREQUESTID`],
 				transactionId: payload[`PAYMENTREQUEST_${i}_TRANSACTIONID`]

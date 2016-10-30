@@ -298,8 +298,8 @@ transactions.post('/cart',
 		}
 
 		const expressCheckout = await paypal.setExpressCheckout({
-			returnURL: req.resolveFromBaseURL('/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
-			cancelURL: req.resolveFromBaseURL('/placeholder/ask_me_to_change_it/i_will_do_it_as_soon_as_possible'),
+			returnURL: req.resolveFromBaseURL('/checkout/ok'),
+			cancelURL: req.resolveFromBaseURL('/checkout/abort'),
 			payments: payments
 		});
 

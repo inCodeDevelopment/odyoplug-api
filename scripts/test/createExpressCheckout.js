@@ -17,19 +17,22 @@ import {createAndActivateUser, createBeat} from 'routes/testUtils';
 	await agent.post('/api/cart/my/addBeat')
 		.set('Authorization', accessTokenBuyer)
 		.send({
-			beatId: beatId
+			beatId: beatId,
+			licenseId: 1
 		});
 
 	await agent.post('/api/cart/my/addBeat')
 		.set('Authorization', accessTokenBuyer)
 		.send({
-			beatId: beatId2
+			beatId: beatId2,
+			licenseId: 1
 		});
 
-	await agent.post('/api/cart/my/addBeat')
+	const cart = await agent.post('/api/cart/my/addBeat')
 		.set('Authorization', accessTokenBuyer)
 		.send({
-			beatId: beatId3
+			beatId: beatId3,
+			licenseId: 1
 		});
 
 	const createTransaction = await agent.post('/api/transactions/cart')
