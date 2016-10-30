@@ -6,6 +6,7 @@ import {authorizedOnly, validate} from 'middlewares';
 
 import {Transaction} from 'models';
 import _ from 'lodash';
+import date from 'date.js';
 
 import {wrap} from './utils';
 import {HttpError} from 'HttpError';
@@ -16,7 +17,9 @@ subscription.use(authorizedOnly);
 
 subscription.get('/',
 	wrap(async function (req, res) {
-
+		res.status(200).json({
+			subscription: req.user.subscription || {rate: 'free'}
+		})
 	})
 );
 
@@ -119,16 +122,25 @@ subscription.post('/finalize',
 			}
 		}
 
-		const reccuringPaymentProfile = await paypal.createRecurringPaymentsProfile({
+		const recurringPaymentProfile = await paypal.createRecurringPaymentsProfile({
 			token: req.body.ecToken,
-			startDate: (new Date()).toISOString(),
+			startDate: date(`in 1 ${transaction.details.period}`).toISOString(),
 			billingPeriod: _.capitalize(transaction.details.period),
 			amount: rate.prices[transaction.details.period],
+			initAmount: rate.prices[transaction.details.period],
 			email: ecInfo.EMAIL,
 			description: rate.title
 		}, payments);
 
-		res.status(200).json(reccuringPaymentProfile);
+		req.user.set('subscription', {
+			method: 'paypal',
+			profileId: recurringPaymentProfile.PROFILEID,
+			rate: transaction.details.rate,
+			payedUntil: date(`in 1 ${transaction.details.period}`).getTime(),
+			autoRenew: true
+		});
+
+		res.status(200).json({});
 	})
 );
 

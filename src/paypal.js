@@ -132,6 +132,8 @@ export default {
 				BILLINGPERIOD: options.billingPeriod,
 				BILLINGFREQUENCY: 1,
 				AMT: options.amount,
+				INITAMT: options.initAmount,
+				FAILEDINITAMTACTION: 'CancelOnFailure',
 				CURRENCYCODE: 'USD',
 				EMAIL: options.email,
 				...paymentRequests

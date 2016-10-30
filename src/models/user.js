@@ -44,6 +44,9 @@ export const User = dbConnection.define('user', {
 	},
 	paypalReceiver: {
 		type: Sequelize.STRING
+	},
+	subscription: {
+		type: Sequelize.JSON
 	}
 }, {
 	timestamps: false,
@@ -145,6 +148,7 @@ export const User = dbConnection.define('user', {
 			delete values.activationToken;
 			delete values.passwordRestoreToken;
 			delete values.passwordRestoreToken;
+			delete values.subscription;
 
 			return values;
 		}
