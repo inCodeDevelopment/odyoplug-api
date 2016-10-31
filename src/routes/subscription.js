@@ -4,18 +4,18 @@ import paypal from 'paypal';
 
 import {authorizedOnly, validate} from 'middlewares';
 
-import {Transaction} from 'models';
+import {Transaction, User} from 'models';
 import _ from 'lodash';
 import date from 'date.js';
+import ipn from 'paypal-ipn';
 
 import {wrap} from './utils';
 import {HttpError} from 'HttpError';
 
 const subscription = Router();
 
-subscription.use(authorizedOnly);
-
 subscription.get('/',
+	authorizedOnly,
 	wrap(async function (req, res) {
 		res.status(200).json({
 			subscription: req.user.subscription || {rate: 'free'}
@@ -24,6 +24,7 @@ subscription.get('/',
 );
 
 subscription.post('/initialize',
+	authorizedOnly,
 	validate({
 		body: {
 			period: {
@@ -73,7 +74,8 @@ subscription.post('/initialize',
 						id: rate.id,
 						amount: rate.prices[req.body.period]
 					}],
-					maxAmount: config.rates.maxAmount
+					maxAmount: config.rates.maxAmount,
+					ipn: `${config.baseURL}api/subscription/ipn`
 				}
 			]
 		});
@@ -88,6 +90,7 @@ subscription.post('/initialize',
 );
 
 subscription.post('/finalize',
+	authorizedOnly,
 	validate({
 		body: {
 			ecToken: {
@@ -144,6 +147,50 @@ subscription.post('/finalize',
 		await req.user.save();
 
 		res.status(200).json({});
+	})
+);
+
+subscription.post('/ipn',
+	function (req, res, next) {
+		ipn.verify(req.body, {
+			allow_sandbox: config.paypal.mode === 'sandbox'
+		}, next);
+	},
+	wrap(async function (req, res) {
+		const profileId = req.body.recurring_payment_id;
+
+		if (!profileId) {
+			res.status(200).send('');
+		}
+
+		const user = await User.findOne({
+			where: {
+				subscriptionId: profileId
+			}
+		});
+
+		if (!user) {
+			res.status(200).send('');
+		}
+
+		switch (req.body.txn_type) {
+			case 'recurring_payment':
+				const payedUntil = new Date(req.body.next_payment_date);
+				user.set('subscription', {
+					...user.subscription,
+					payedUntil: payedUntil.getTime()
+				});
+				await user.save();
+				break;
+			case 'recurring_payment_profile_cancel':
+			case 'recurring_payment_suspended':
+			case 'recurring_payment_suspended_due_to_max_failed_payment':
+				user.set('subscription', null);
+				await user.save();
+				break;
+		}
+
+		res.status(200).send('');
 	})
 );
 

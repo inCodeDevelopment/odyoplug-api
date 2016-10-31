@@ -75,6 +75,10 @@ function buildPaymentRequests(payments) {
 			}
 		}
 
+		if (payment.ipn) {
+			paymentRequests[`PAYMENTREQUEST_${I}_NOTIFYURL`] = payment.ipn;
+		}
+
 		if (payment.recurring) {
 			paymentRequests[`L_BILLINGTYPE${i}`] = 'RecurringPayments';
 			paymentRequests[`L_BILLINGAGREEMENTDESCRIPTION${i}`] = payment.description;
