@@ -134,7 +134,14 @@ const updateTransactionInfoByPayPalECToken = wrap(
 		await transaction.reload();
 
 		res.status(200).json({
-			transactions: await transaction.getSubTransactions()
+			transactions: await Transaction
+				.scope('with:items')
+				.findAll({
+					where: {
+						superTransactionId: transaction.id,
+						userId: req.user_id
+					}
+				})
 		});
 	}
 );
