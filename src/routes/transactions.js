@@ -133,7 +133,9 @@ const updateTransactionInfoByPayPalECToken = wrap(
 
 		await transaction.reload();
 
-		res.status(200).json({transaction});
+		res.status(200).json({
+			transactions: await transaction.getSubTransactions()
+		});
 	}
 );
 
