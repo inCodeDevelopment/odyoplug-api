@@ -78,6 +78,18 @@ initializer.after(['models', 'TransactionItem scope with:beat'], function ({Tran
 	initializer.did('Transaction scope with:items');
 });
 
+initializer.after(['models', 'TransactionItem scope with:beat,beat.user'], function ({TransactionItem}) {
+	Transaction.addScope('with:items,items.beat.user', {
+		include: [
+			{
+				model: TransactionItem.scope('with:beat,beat.user'),
+				as: 'items'
+			}
+		]
+	});
+	initializer.did('Transaction scope with:items,items.beat.user');
+});
+
 initializer.after(['models', 'Transaction scope with:items'], function () {
 	Transaction.addScope('with:subTransactions', {
 		include: [

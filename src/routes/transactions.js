@@ -135,7 +135,7 @@ const updateTransactionInfoByPayPalECToken = wrap(
 
 		res.status(200).json({
 			transactions: await Transaction
-				.scope('with:items')
+				.scope('with:items,items.beat.user')
 				.findAll({
 					where: {
 						superTransactionId: transaction.id,

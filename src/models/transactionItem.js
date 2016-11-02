@@ -19,11 +19,18 @@ initializer.after(['models'], function ({Transaction, Beat}) {
 	TransactionItem.belongsTo(Beat);
 });
 
-initializer.after(['models', 'Beat scope with:file'], function ({Beat}) {
+initializer.after(['models', 'Beat scope with:file', 'Beat scope with:user'], function ({Beat}) {
 	TransactionItem.addScope('with:beat', {
 		include: [{
 			model: Beat.scope('with:file')
 		}]
 	});
 	initializer.did('TransactionItem scope with:beat');
+
+	TransactionItem.addScope('with:beat,beat.user', {
+		include: [{
+			model: Beat.scope('with:file', 'with:user')
+		}]
+	});
+	initializer.did('TransactionItem scope with:beat,beat.user');
 });
