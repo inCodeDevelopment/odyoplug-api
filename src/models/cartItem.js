@@ -40,11 +40,11 @@ initializer.after(['models'], function ({Beat, User}) {
 	});
 });
 
-initializer.after(['models', 'Beat scope with:file'], function ({Beat}) {
+initializer.after(['models', 'Beat scope with:file', 'Beat scope with:user'], function ({Beat}) {
 	CartItem.addScope('with:beats', {
 		include: [
 			{
-				model: Beat.scope('with:file'),
+				model: Beat.scope('with:file', 'with:user'),
 				paranoid: true
 			}
 		]
