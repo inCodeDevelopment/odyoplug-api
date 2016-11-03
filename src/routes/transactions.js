@@ -32,7 +32,7 @@ transactions.get('/',
 		}
 
 		const transactions = await Transaction
-			.scope('with:items', 'skip:superTransactions')
+			.scope('with:items,items.beat.user', 'skip:superTransactions')
 			.findAll({
 				where: {
 					...query,
@@ -211,7 +211,7 @@ transactions.post('/refreshByPayPalECToken',
 transactions.get('/:id(\\d+)',
 	authorizedOnly,
 	wrap(async function (req, res) {
-		const transaction = await Transaction.scope('with:items').findOne({
+		const transaction = await Transaction.scope('with:items,items.beat.user').findOne({
 			where: {
 				userId: req.user_id,
 				id: req.params.id
