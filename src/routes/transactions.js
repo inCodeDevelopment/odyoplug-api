@@ -59,7 +59,7 @@ transactions.get('/getByPayPalECToken',
 		}
 
 		const transactions = await superTransaction.getSubTransactions({
-			scope: 'with:items',
+			scope: 'with:items,items.beat.user',
 			where: {
 				userId: req.user_id
 			}
